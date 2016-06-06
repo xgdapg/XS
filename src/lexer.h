@@ -11,15 +11,15 @@ namespace Lang {
 	class Lexer {
 	public:
 		Lexer(string path) {
-			tokens = vector<Token>();
+			tokens = vector<Token*>();
 			file = path;
 		}
 
-		vector<Token> getTokens();
+		vector<Token*> getTokens();
 
 	private:
 		string         file;
-		vector<Token>  tokens;
+		vector<Token*> tokens;
 
 		vector<string> lines;
 		unsigned int   row = 0;
@@ -35,7 +35,7 @@ namespace Lang {
 		void fetchBlockComment();
 		void fetchNumber();
 
-		void addToken(string value, Token::Type type = Token::Type::Unknown);
+		void addToken(string value, Token::Kind kind = Token::Kind::kUnknown, Token::Type type = Token::Type::tUnknown);
 		void movePtr(unsigned int offset);
 		char getChar(unsigned int offset);
 		char getLineChar(unsigned int offset);

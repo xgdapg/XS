@@ -9,7 +9,7 @@
 #define EOL EOF
 
 namespace Lang {
-	vector<Token> Lexer::getTokens() {
+	vector<Token*> Lexer::getTokens() {
 		if (tokens.size() == 0) {
 			if (!loadFile(file)) {
 				throwException("Fail to open file");
@@ -75,13 +75,9 @@ namespace Lang {
 				movePtr(1);
 				continue;
 			}
-			if (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ':' || c == ',' || c == '.' || c == '&') {
-				ss << c;
-				addToken(ss.str());
-				continue;
-			}
-			if (c == '-' && nc == '>') {
-				addToken("->");
+			if (c == '-' && nc == '>' || c == '&' && nc == '&' || c == '|' && nc == '|') {
+				ss << c << nc;
+				addToken(ss.str(), Token::Kind::kOperator);
 				continue;
 			}
 			if (c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '!' || c == '=' || c == '>' || c == '<') {
@@ -89,7 +85,12 @@ namespace Lang {
 				if (nc == '=') {
 					ss << '=';
 				}
-				addToken(ss.str());
+				addToken(ss.str(), Token::Kind::kOperator);
+				continue;
+			}
+			if (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ':' || c == ',' || c == '.' || c == '&') {
+				ss << c;
+				addToken(ss.str(), Token::Kind::kOperator);
 				continue;
 			}
 
@@ -99,7 +100,7 @@ namespace Lang {
 				c = getLineChar(++i);
 			}
 			
-			addToken(ss.str(), Keywords.find(ss.str()) == Keywords.end() ? Token::Identifier : Token::Unknown);
+			addToken(ss.str(), Keywords.find(ss.str()) == Keywords.end() ? Token::Kind::kIdentifier : Token::Kind::kKeyword);
 			continue;
 		}
 	}
@@ -111,7 +112,7 @@ namespace Lang {
 		int escapeCnt = 0;
 		while (c != EOF) {
 			if (c == '"') {
-				addToken(ss.str(), Token::Type::String);
+				addToken(ss.str(), Token::Kind::kLiteral, Token::Type::tString);
 				movePtr(1 + escapeCnt);
 				return;
 			} else if (c == '\\') {
@@ -141,7 +142,7 @@ namespace Lang {
 			ss << c;
 			c = getLineChar(++i);
 		}
-		addToken(ss.str(), Token::Type::LineComment);
+		addToken(ss.str(), Token::Kind::kComment, Token::Type::tLineComment);
 		row++;
 		col = 0;
 	}
@@ -155,7 +156,7 @@ namespace Lang {
 			if (c == '/' && nc == '*') { ss << nc; i++; clv++; }
 			if (c == '*' && nc == '/') { ss << nc; i++; clv--; }
 			if (clv == 0) {
-				addToken(ss.str(), Token::Type::BlockComment);
+				addToken(ss.str(), Token::Kind::kComment, Token::Type::tBlockComment);
 				return;
 			}
 			c = getChar(i);
@@ -180,15 +181,18 @@ namespace Lang {
 			}
 			c = getChar(++i);
 		}
-		addToken(ss.str(), hasDot ? Token::Type::Float : Token::Type::Integer);
+		addToken(ss.str(), Token::Kind::kLiteral, hasDot ? Token::Type::tFloat : Token::Type::tInteger);
 	}
 
 
 	
 
-	void Lexer::addToken(string value, Token::Type type) {
-		tokens.push_back(Token(type, value, row + 1, col + 1));
+	void Lexer::addToken(string value, Token::Kind kind, Token::Type type) {
+		auto token = new Token(kind, type, value, row + 1, col + 1);
+		tokens.push_back(token);
 		movePtr(value.length());
+
+
 	}
 
 	void Lexer::movePtr(unsigned int offset) {
