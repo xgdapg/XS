@@ -192,7 +192,10 @@ namespace Lang {
 		tokens.push_back(token);
 		movePtr(value.length());
 
-
+		if (kind == Token::Kind::kKeyword && (value == "true" || value == "false")) {
+			token->kind = Token::Kind::kLiteral;
+			token->type = Token::Type::tBoolean;
+		}
 	}
 
 	void Lexer::movePtr(unsigned int offset) {
