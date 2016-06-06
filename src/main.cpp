@@ -30,6 +30,8 @@ void saveLex(std::vector<Lang::Token> tokens) {
 	ss << tokens[tokens.size() - 1].row;
 	int width = ss.str().length();
 	for (auto token : tokens) {
+		if (token.type == Lang::Token::Type::LineComment) continue;
+		if (token.type == Lang::Token::Type::BlockComment) continue;
 		stringstream ss;
 		ss << token.type << " [";
 		ss.width(width);

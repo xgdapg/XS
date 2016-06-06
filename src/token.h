@@ -16,6 +16,9 @@ namespace Lang {
 			Boolean,
 			Identifier,
 
+			LineComment,
+			BlockComment,
+
 			Plus, // +
 			Minus, // -
 			Mulit, // *
@@ -69,8 +72,8 @@ namespace Lang {
 		Token(Type t, string v, int r, int c) {
 			type = t;
 			value = v;
-			row = r + 1;
-			col = c + 1;
+			row = r;
+			col = c;
 		}
 	};
 }
