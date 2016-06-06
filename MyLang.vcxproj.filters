@@ -27,6 +27,9 @@
     <ClInclude Include="src\define.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\ast.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\lexer.cpp">
@@ -35,7 +38,7 @@
     <ClCompile Include="src\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\define.cpp">
+    <ClCompile Include="src\ast.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -33,6 +33,14 @@ namespace Lang {
 			tLineComment,
 			tBlockComment,
 
+			//Keyword
+			tDefineFn,
+			tDefineStruct,
+			tDefineInterface,
+
+			tDeclareVar,
+			tDeclareConst,
+
 			//Operator
 			tPlus, // +
 			tMinus, // -

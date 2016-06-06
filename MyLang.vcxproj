@@ -142,13 +142,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\ast.h" />
     <ClInclude Include="src\define.h" />
     <ClInclude Include="src\lang.h" />
     <ClInclude Include="src\lexer.h" />
     <ClInclude Include="src\token.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\define.cpp" />
+    <ClCompile Include="src\ast.cpp" />
     <ClCompile Include="src\lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
