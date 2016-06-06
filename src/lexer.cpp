@@ -1,9 +1,12 @@
-#include "lang.h"
 #include <fstream>
 #include <iostream>
+#include "lexer.h"
+#include "define.h"
 
-#define EOL (0)
-#define EOF (0)
+#ifndef EOF
+#define EOF (-1)
+#endif // !EOF
+#define EOL EOF
 
 namespace Lang {
 	vector<Token> Lexer::getTokens() {
@@ -11,7 +14,7 @@ namespace Lang {
 			if (!loadFile(file)) {
 				throwException("Fail to open file");
 			}
-			while (loadToken());
+			parse();
 		}
 		return tokens;
 	}
@@ -36,60 +39,50 @@ namespace Lang {
 		return false;
 	}
 
-	bool Lexer::loadToken() {
-		if (row >= lines.size()) return false;
-
-		char c = getLineChar(0);
-		//cout << "row: " << row + 1 << ", c: " << c << endl;
-		if (c == EOL) {
-			row++;
-			col = 0;
-			return true;
-		}
-
-		stringstream ss;
-			
-		if (state == State::Normal) {
-			char nc = getLineChar(1);
-			if (c == '"') {
-				state = State::String;
-				movePtr(1);
-				return true;
-			}
-			if (c == '/' && nc == '/') {
-				int i = 0;
-				while (c != EOL && c != '\r' && c != '\n') {
-					ss << c;
-					c = getLineChar(++i);
-				}
-				addToken(ss.str(), Token::Type::LineComment);
+	void Lexer::parse() {
+		while (row < lines.size()) {
+			c = getLineChar(0);
+			//cout << "row: " << row + 1 << ", c: " << c << endl;
+			if (c == EOL) {
 				row++;
 				col = 0;
-				return true;
+				continue;
+			}
+
+			ss.str("");
+			char nc = getLineChar(1);
+
+			if (c == '"') {
+				fetchString();
+				continue;
+			}
+			if (c == '/' && nc == '/') {
+				fetchLineComment();
+				continue;
 			}
 			if (c == '/' && nc == '*') {
-				state = State::Comment;
-				return true;
+				fetchBlockComment();
+				continue;
 			}
 			if (c == '*' && nc == '/') {
 				throwException("error: unmatched block comment");
 			}
 			if (c >= '0' && c <= '9') {
-				state = State::Number;
-				return true;
+				fetchNumber();
+				continue;
 			}
 			if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
 				movePtr(1);
-				return true;
+				continue;
 			}
 			if (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ':' || c == ',' || c == '.' || c == '&') {
 				ss << c;
 				addToken(ss.str());
-				return true;
+				continue;
 			}
 			if (c == '-' && nc == '>') {
 				addToken("->");
-				return true;
+				continue;
 			}
 			if (c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '!' || c == '=' || c == '>' || c == '<') {
 				ss << c;
@@ -97,100 +90,101 @@ namespace Lang {
 					ss << '=';
 				}
 				addToken(ss.str());
-				return true;
+				continue;
 			}
-			
+
 			int i = 0;
-			while (c == '_' || c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c < 0) {
+			while (c == '_' || c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c < 0 && c != EOL) {
 				ss << c;
 				c = getLineChar(++i);
 			}
-			addToken(ss.str());
-			return true;
-		}
-
-		else if (state == State::String) {
-			int i = 0;
-			int escapeCnt = 0;
-			while (c != EOF) {
-				if (c == '"') {
-					addToken(ss.str(), Token::Type::String);
-					state = State::Normal;
-					movePtr(1 + escapeCnt);
-					return true;
-				}
-				else if (c == '\\') {
-					char nc = getChar(++i);
-					if (nc == '\\') ss << '\\';
-					else if (nc == 't') ss << '\t';
-					else if (nc == 'r') ss << '\r';
-					else if (nc == 'n') ss << '\n';
-					else if (nc == '"') ss << '"';
-					else {
-						stringstream e;
-						e << "error: unknown escape " << '\\' << nc;
-						throwException(e.str());
-					}
-					escapeCnt++;
-				}
-				else {
-					ss << c;
-				}
-				c = getChar(++i);
-			}
-			throwException("error: string EOF");
-		}
-
-		else if (state == State::Comment) {
-			int clv = 0;
-			int i = 0;
 			
-			while (c != EOF) {
-				ss << c;
-				char nc = getChar(++i);
-				if (c == '/' && nc == '*') { ss << nc; i++; clv++; }
-				if (c == '*' && nc == '/') { ss << nc; i++; clv--; }
-				if (clv == 0) {
-					state = State::Normal;
-					addToken(ss.str(), Token::Type::BlockComment);
-					return true;
-				}
-				c = getChar(i);
-			}
-			throwException("error: unclosed block comment");
-			//addToken(ss.str(), Token::Type::BlockComment);
-			return false;
+			addToken(ss.str(), Keywords.find(ss.str()) == Keywords.end() ? Token::Identifier : Token::Unknown);
+			continue;
 		}
-
-		else if (state == State::Number) {
-			int i = 0;
-			bool hasDot = false;
-			while (c != EOF) {
-				if (c == '.') {
-					if (hasDot) {
-						throwException("error: number format 2dot");
-					}
-					hasDot = true;
-					ss << c;
-				}
-				else if (c >= '0' && c <= '9') {
-					ss << c;
-				}
-				else {
-					state = State::Normal;
-					addToken(ss.str(), hasDot ? Token::Type::Float : Token::Type::Integer);
-					return true;
-				}
-				c = getChar(++i);
-			}
-		}
-
-		else {
-			throwException("error: unknown state");
-		}
-
-		return false;
 	}
+
+	void Lexer::fetchString() {
+		movePtr(1);
+		c = getChar(0); // skip the first "
+		int i = 0;
+		int escapeCnt = 0;
+		while (c != EOF) {
+			if (c == '"') {
+				addToken(ss.str(), Token::Type::String);
+				movePtr(1 + escapeCnt);
+				return;
+			} else if (c == '\\') {
+				char nc = getChar(++i);
+				if (nc == '\\') ss << '\\';
+				else if (nc == 't') ss << '\t';
+				else if (nc == 'r') ss << '\r';
+				else if (nc == 'n') ss << '\n';
+				else if (nc == '"') ss << '"';
+				else {
+					stringstream e;
+					e << "error: unknown escape " << '\\' << nc;
+					throwException(e.str());
+				}
+				escapeCnt++;
+			} else {
+				ss << c;
+			}
+			c = getChar(++i);
+		}
+		throwException("error: unclosed string");
+	}
+
+	void Lexer::fetchLineComment() {
+		int i = 0;
+		while (c != EOL && c != '\r' && c != '\n') {
+			ss << c;
+			c = getLineChar(++i);
+		}
+		addToken(ss.str(), Token::Type::LineComment);
+		row++;
+		col = 0;
+	}
+
+	void Lexer::fetchBlockComment() {
+		int clv = 0;
+		int i = 0;
+		while (c != EOF) {
+			ss << c;
+			char nc = getChar(++i);
+			if (c == '/' && nc == '*') { ss << nc; i++; clv++; }
+			if (c == '*' && nc == '/') { ss << nc; i++; clv--; }
+			if (clv == 0) {
+				addToken(ss.str(), Token::Type::BlockComment);
+				return;
+			}
+			c = getChar(i);
+		}
+		throwException("error: unclosed block comment");
+	}
+
+	void Lexer::fetchNumber() {
+		bool hasDot = false;
+		int i = 0;
+		while (c != EOF) {
+			if (c == '.') {
+				if (hasDot) {
+					throwException("error: number format 2dot");
+				}
+				hasDot = true;
+				ss << c;
+			} else if (c >= '0' && c <= '9') {
+				ss << c;
+			} else {
+				break;
+			}
+			c = getChar(++i);
+		}
+		addToken(ss.str(), hasDot ? Token::Type::Float : Token::Type::Integer);
+	}
+
+
+	
 
 	void Lexer::addToken(string value, Token::Type type) {
 		tokens.push_back(Token(type, value, row + 1, col + 1));
