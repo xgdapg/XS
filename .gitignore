@@ -243,6 +243,4 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/MyLang.vcxproj
-/MyLang.vcxproj.filters
-/MyLang.sln
+
