@@ -58,9 +58,9 @@ void saveTree(Lang::AST::Node* node) {
 	fs << "td{ vertical-align: top; }";
 	fs << "span{ display: block; text-align:center; }";
 	fs << "div{ border-style: solid; border-width: 1px; text-align:center; padding:2px; }";
-	fs << "</style></head><body>";
+	fs << "</style></head><body><table><tr><td>";
 	fs << printNode(node);
-	fs << "</body></html>";
+	fs << "</td></tr></table></body></html>";
 	fs.close();
 }
 

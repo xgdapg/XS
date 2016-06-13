@@ -80,12 +80,15 @@ namespace Lang {
 				}
 				continue;
 			}
-			if (t->kind == Token::Kind::kOperator && t->getPriority() <= priority) {
-				opi = i;
-				priority = t->getPriority();
+			if (t->kind == Token::Kind::kOperator) {
+				if (t->isUnaryOperator() && t->getPriority() < priority ||
+					t->isBinaryOperator() && t->getPriority() <= priority) {
+					opi = i;
+					priority = t->getPriority();
+				}
 			}
 		}
-		cout << "opi: " << opi << endl;
+
 		if (opi != EOF) {
 			auto op = token(opi);
 			auto node = new Node(op);
@@ -98,7 +101,7 @@ namespace Lang {
 			}
 			else {
 				//error
-				cout << "error1";
+				cout << "error: unexpected operator " << op->value << endl;
 			}
 			return node;
 		} else {
@@ -118,7 +121,7 @@ namespace Lang {
 			}
 			else {
 				//error
-				cout << "error2";
+				cout << "error: unexpected token " << t->value << endl;
 			}
 		}
 		return nullptr;
@@ -156,7 +159,6 @@ namespace Lang {
 		auto i = begin;
 		auto t = tokenAt(i);
 		while (t != emptyToken) {
-			cout << "checkExpr" << i << ":" << t->type << endl;
 			if (t->kind == Token::Kind::kLiteral) {
 				i += tokenAt(i + 1)->isBinaryOperator() ? 2 : 1;
 			}
@@ -189,7 +191,7 @@ namespace Lang {
 				}
 				i += tokenAt(i + 1)->isBinaryOperator() ? 2 : 1;
 			}
-			else if (t->isUnaryOperator()) {
+			else if (t->convertToUnaryOperator()) {
 				i += 1;
 			}
 			else break;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 using namespace std;
 
@@ -13,6 +14,7 @@ namespace Lang {
 			kLiteral,
 			kIdentifier,
 			kOperator,
+			kUnaryOperator,
 			kComment,
 		};
 
@@ -46,6 +48,8 @@ namespace Lang {
 			tMinus, // -
 			tMulit, // *
 			tDivide, // /
+			tUnaryPlus, // +
+			tUnaryMinus, // -
 
 			tAssign, // =
 			tEqual, // ==
@@ -65,6 +69,8 @@ namespace Lang {
 			tBinOpXor, // ^
 			tBinOpLShift, // <<
 			tBinOpRShift, // >>
+
+			tRef, // &
 
 			tTilde, // ~
 			tDot, // .
@@ -111,9 +117,9 @@ namespace Lang {
 			case Token::Type::tMulit:
 			case Token::Type::tDivide:
 			case Token::Type::tEqual:
+			case Token::Type::tNotEqual:
 			case Token::Type::tLessThan:
 			case Token::Type::tLessEqual:
-			case Token::Type::tNotEqual:
 			case Token::Type::tGreaterThan:
 			case Token::Type::tGreaterEqual:
 			case Token::Type::tLogicAnd:
@@ -127,25 +133,60 @@ namespace Lang {
 		bool isUnaryOperator() {
 			switch (type) {
 			case Token::Type::tLogicNot:
+			case Token::Type::tBinOpNot:
+			case Token::Type::tUnaryMinus:
+			case Token::Type::tUnaryPlus:;
+			case Token::Type::tRef: return true;
+			}
+			return false;
+		}
+
+		bool convertToUnaryOperator() {
+			switch (type) {
+			case Token::Type::tLogicNot:
+				return true;
 			case Token::Type::tMinus:
+				type = Token::Type::tUnaryMinus;
+			case Token::Type::tUnaryMinus:
+				return true;
 			case Token::Type::tPlus:
-			case Token::Type::tBinOpNot: return true;
+				type = Token::Type::tUnaryPlus;
+			case Token::Type::tUnaryPlus:
+				return true;
+			case Token::Type::tBinOpNot:
+				return true;
+			case Token::Type::tRef:
+				return true;
 			}
 			return false;
 		}
 
 		int getPriority() {
-			switch (type) {
-			case Token::Type::tLogicOr: return 1;
-			case Token::Type::tLogicAnd: return 2;
-			case Token::Type::tMinus:
-			case Token::Type::tPlus: return 3;
-			case Token::Type::tMulit:
-			case Token::Type::tDivide: return 4;
-			case Token::Type::tLogicNot: return 5;
-			case Token::Type::tDot: return 6;
-			}
-			return 1;
+			int priority = 1;
+			if (type == Token::Type::tLogicOr) return priority;
+			priority++;
+			if (type == Token::Type::tLogicAnd) return priority;
+			priority++;
+			if (type == Token::Type::tEqual) return priority;
+			if (type == Token::Type::tNotEqual) return priority;
+			if (type == Token::Type::tLessThan) return priority;
+			if (type == Token::Type::tLessEqual) return priority;
+			if (type == Token::Type::tGreaterThan) return priority;
+			if (type == Token::Type::tGreaterEqual) return priority;
+			priority++;
+			if (type == Token::Type::tMinus) return priority;
+			if (type == Token::Type::tPlus) return priority;
+			priority++;
+			if (type == Token::Type::tMulit) return priority;
+			if (type == Token::Type::tDivide) return priority;
+			priority++;
+			if (isUnaryOperator()) return priority;
+			priority++;
+			if (type == Token::Type::tDot) return priority;
+			priority++;
+			//error
+			cout << "error: operator " << value << " has no priority" << endl;
+			return 0;
 		}
 	};
 }
