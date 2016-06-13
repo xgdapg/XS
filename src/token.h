@@ -85,6 +85,8 @@ namespace Lang {
 			tRBracket, // ]
 			tLBrace, // {
 			tRBrace, // }
+
+			tFuncCall, //
 		};
 
 		Kind   kind  = Kind::kUnknown;
@@ -99,6 +101,51 @@ namespace Lang {
 			value = v;
 			row   = r;
 			col   = c;
+		}
+
+		//二元操作符
+		bool isBinaryOperator() {
+			switch (type) {
+			case Token::Type::tPlus:
+			case Token::Type::tMinus:
+			case Token::Type::tMulit:
+			case Token::Type::tDivide:
+			case Token::Type::tEqual:
+			case Token::Type::tLessThan:
+			case Token::Type::tLessEqual:
+			case Token::Type::tNotEqual:
+			case Token::Type::tGreaterThan:
+			case Token::Type::tGreaterEqual:
+			case Token::Type::tLogicAnd:
+			case Token::Type::tLogicOr:;
+			case Token::Type::tDot: return true;
+			}
+			return false;
+		}
+
+		//一元操作符
+		bool isUnaryOperator() {
+			switch (type) {
+			case Token::Type::tLogicNot:
+			case Token::Type::tMinus:
+			case Token::Type::tPlus:
+			case Token::Type::tBinOpNot: return true;
+			}
+			return false;
+		}
+
+		int getPriority() {
+			switch (type) {
+			case Token::Type::tLogicOr: return 1;
+			case Token::Type::tLogicAnd: return 2;
+			case Token::Type::tMinus:
+			case Token::Type::tPlus: return 3;
+			case Token::Type::tMulit:
+			case Token::Type::tDivide: return 4;
+			case Token::Type::tLogicNot: return 5;
+			case Token::Type::tDot: return 6;
+			}
+			return 1;
 		}
 	};
 }

@@ -43,12 +43,17 @@ namespace Lang {
 		}
 
 		Token* token(unsigned int i = 0);
+		Token* tokenAt(unsigned int i = 0);
 
 		void buildWithTokens(vector<Token*> tokens);
 
 		Node* createDeclareVar();
 		Node* createAssign();
 		Node* createExpr();
+		Node* parseExpr(unsigned int begin, unsigned int end);
+		Node* parseFunc(unsigned int begin, unsigned int end);
+
+		int detectExprEnd(unsigned int begin);
 	};
 	
 

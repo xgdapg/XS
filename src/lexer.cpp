@@ -188,6 +188,11 @@ namespace Lang {
 	
 
 	void Lexer::addToken(string value, Token::Kind kind, Token::Type type) {
+		if (true && kind == Token::Kind::kComment) {
+			movePtr(value.length());
+			return;
+		}
+
 		auto token = new Token(kind, type, value, row + 1, col + 1);
 		tokens.push_back(token);
 		movePtr(value.length());
@@ -195,6 +200,29 @@ namespace Lang {
 		if (kind == Token::Kind::kKeyword && (value == "true" || value == "false")) {
 			token->kind = Token::Kind::kLiteral;
 			token->type = Token::Type::tBoolean;
+		}
+		if (kind == Token::Kind::kOperator) {
+			if (value == "+") token->type = Token::Type::tPlus;
+			else if (value == "-") token->type = Token::Type::tMinus;
+			else if (value == "*") token->type = Token::Type::tMulit;
+			else if (value == "/") token->type = Token::Type::tDivide;
+
+			else if (value == "==") token->type = Token::Type::tEqual;
+			else if (value == "<") token->type = Token::Type::tLessThan;
+			else if (value == "<=") token->type = Token::Type::tLessEqual;
+			else if (value == "!=") token->type = Token::Type::tNotEqual;
+			else if (value == ">") token->type = Token::Type::tGreaterThan;
+			else if (value == ">=") token->type = Token::Type::tGreaterEqual;
+
+			else if (value == "&&") token->type = Token::Type::tLogicAnd;
+			else if (value == "||") token->type = Token::Type::tLogicOr;
+			else if (value == "!") token->type = Token::Type::tLogicNot;
+
+			else if (value == ".") token->type = Token::Type::tDot;
+			else if (value == ",") token->type = Token::Type::tComma;
+
+			else if (value == "(") token->type = Token::Type::tLParen;
+			else if (value == ")") token->type = Token::Type::tRParen;
 		}
 	}
 
