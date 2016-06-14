@@ -223,6 +223,10 @@ namespace Lang {
 
 			else if (value == "(") token->type = Token::Type::tLParen;
 			else if (value == ")") token->type = Token::Type::tRParen;
+			else if (value == "[") token->type = Token::Type::tLBracket;
+			else if (value == "]") token->type = Token::Type::tRBracket;
+			else if (value == "{") token->type = Token::Type::tLBrace;
+			else if (value == "}") token->type = Token::Type::tRBrace;
 		}
 	}
 

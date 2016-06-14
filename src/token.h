@@ -93,6 +93,7 @@ namespace Lang {
 			tRBrace, // }
 
 			tFuncCall, //
+			tSubscript, //
 		};
 
 		Kind   kind  = Kind::kUnknown;

@@ -8,7 +8,7 @@
 #include <vector>
 
 void saveLex(std::vector<Lang::Token*> tokens);
-void saveTree(Lang::AST::Node* node);
+void saveTree(Lang::AST::Node* node, string expr = "");
 string printNode(Lang::AST::Node* node);
 
 int main()
@@ -18,12 +18,10 @@ int main()
 		auto tokens = lexer->getTokens();
 		auto ast = new Lang::AST(tokens);
 		int i = ast->detectExprEnd(0);
-		for (int j = 0; j < i; j++) {
-			cout << tokens[j]->value << " ";
-		}
-		cout << endl;
+		stringstream ss;
+		for (int j = 0; j < i; j++) ss << tokens[j]->value;
 		auto node = ast->parseExpr(0, i);
-		saveTree(node);
+		saveTree(node, ss.str());
 		saveLex(tokens);
 	} catch (exception e) {
 		cout << e.what() << endl;
@@ -52,13 +50,14 @@ void saveLex(std::vector<Lang::Token*> tokens) {
 	fs.close();
 }
 
-void saveTree(Lang::AST::Node* node) {
+void saveTree(Lang::AST::Node* node, string expr) {
 	fstream fs("test.tree.html", ios::out);
 	fs << "<!DOCTYPE html><html><head><style type=\"text/css\">";
 	fs << "td{ vertical-align: top; }";
 	fs << "span{ display: block; text-align:center; }";
 	fs << "div{ border-style: solid; border-width: 1px; text-align:center; padding:2px; }";
 	fs << "</style></head><body><table><tr><td>";
+	fs << "<span>" + expr + "</span>";
 	fs << printNode(node);
 	fs << "</td></tr></table></body></html>";
 	fs.close();

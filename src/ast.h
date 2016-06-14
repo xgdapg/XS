@@ -50,13 +50,15 @@ namespace Lang {
 		Node* createDeclareVar();
 		Node* createAssign();
 		Node* createExpr();
-		Node* parseExpr(unsigned int begin, unsigned int end);
-		Node* parseFunc(unsigned int begin, unsigned int end);
 
 		int detectExprEnd(unsigned int begin);
 
+		Node* parseExpr(unsigned int begin, unsigned int end);
+		Node* parseFunc(unsigned int begin, unsigned int end);
+		Node* parseSubscript(unsigned int begin, unsigned int end);
 
-		Node* parseExpr(unsigned int i);
+
+
 	};
 	
 
