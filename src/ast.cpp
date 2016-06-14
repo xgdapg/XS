@@ -2,8 +2,13 @@
 #include <iostream>
 
 namespace Lang {
+	void throwException(Token* t, string e) {
+		cout << "[" << t->row << "," << t->col << "] ";
+		throw exception(e.c_str());
+	}
+
 	Token * AST::tokenAt(unsigned int i) {
-		if (i < tokens.size()) return tokens[i];
+		if (i >= 0 && i < tokens.size()) return tokens[i];
 		return emptyToken;
 	}
 
@@ -66,6 +71,7 @@ namespace Lang {
 	AST::Node* AST::parseExpr(unsigned int begin, unsigned int end) {
 		int opi = EOF;
 		int priority = 99;
+		for (auto i = begin; i < end; i++) cout << tokenAt(i)->value; cout << endl;
 		for (auto i = begin; i < end; i++) {
 			auto t = tokenAt(i);
 			if (t->type == Token::Type::tLParen) {
@@ -81,6 +87,14 @@ namespace Lang {
 				continue;
 			}
 			if (t->kind == Token::Kind::kOperator) {
+				auto pt = tokenAt(i - 1);
+				if (pt->kind != Token::Kind::kIdentifier &&
+					pt->kind != Token::Kind::kLiteral &&
+					pt->type != Token::Type::tRParen) {
+					if (!t->convertToUnaryOperator()) {
+						cout << "error: unexpected operator " << t->value << endl;
+					}
+				}
 				if (t->isUnaryOperator() && t->getPriority() < priority ||
 					t->isBinaryOperator() && t->getPriority() <= priority) {
 					opi = i;
@@ -91,6 +105,7 @@ namespace Lang {
 
 		if (opi != EOF) {
 			auto op = token(opi);
+			cout << "op: " << op->value << " u:" << op->isUnaryOperator() << endl;
 			auto node = new Node(op);
 			if (op->isBinaryOperator()) {
 				node->addChild(parseExpr(begin, opi));
@@ -156,46 +171,100 @@ namespace Lang {
 
 
 	int AST::detectExprEnd(unsigned int begin) {
+		enum State {
+			sEvaluable,
+			sOperator,
+		};
+		auto state = sEvaluable;
 		auto i = begin;
 		auto t = tokenAt(i);
 		while (t != emptyToken) {
-			if (t->kind == Token::Kind::kLiteral) {
-				i += tokenAt(i + 1)->isBinaryOperator() ? 2 : 1;
-			}
-			else if (t->kind == Token::Kind::kIdentifier) {
-				if (tokenAt(i + 1)->type == Token::Type::tLParen) {
-					//function
+			if (state == sEvaluable) {
+				if (t->isLiteral()) {
+					t = tokenAt(++i);
+					if (t->isBinaryOperator()) {
+						state = sOperator;
+						continue;
+					}
+					break;
+				}
+				else if (t->isIdentifier()) {
+					if (tokenAt(i + 1)->isOperator("(")) { //function
+						int pcnt = 0;
+						for (auto j = i + 1; j < tokens.size(); j++) {
+							if (tokenAt(j)->isOperator("(")) pcnt++;
+							if (tokenAt(j)->isOperator(")")) pcnt--;
+							if (pcnt == 0) {
+								i = j;
+								break;
+							}
+						}
+					}
+					else if (tokenAt(i + 1)->isOperator("[")) { //array
+						int pcnt = 0;
+						for (auto j = i + 1; j < tokens.size(); j++) {
+							if (tokenAt(j)->isOperator("[")) pcnt++;
+							if (tokenAt(j)->isOperator("]")) pcnt--;
+							if (pcnt == 0) {
+								i = j;
+								break;
+							}
+						}
+					}
+					else { //variable
+
+					}
+
+					t = tokenAt(++i);
+					if (t->isBinaryOperator()) {
+						state = sOperator;
+						continue;
+					}
+					break;
+				}
+				else if (t->isOperator("(")) {
 					int pcnt = 0;
-					for (auto j = i + 1; j < tokens.size(); j++) {
-						if (tokenAt(j)->type == Token::Type::tLParen) pcnt++;
-						if (tokenAt(j)->type == Token::Type::tRParen) pcnt--;
+					for (auto j = i; j < tokens.size(); j++) {
+						if (tokenAt(j)->isOperator("(")) pcnt++;
+						if (tokenAt(j)->isOperator(")")) pcnt--;
 						if (pcnt == 0) {
 							i = j;
 							break;
 						}
 					}
-				} else {
-					//variable
-				}
-				i += tokenAt(i + 1)->isBinaryOperator() ? 2 : 1;
-			}
-			else if (t->type == Token::Type::tLParen) {
-				int pcnt = 0;
-				for (auto j = i + 1; j < tokens.size(); j++) {
-					if (tokenAt(j)->type == Token::Type::tLParen) pcnt++;
-					if (tokenAt(j)->type == Token::Type::tRParen) pcnt--;
-					if (pcnt == 0) {
-						i = j;
-						break;
+
+					t = tokenAt(++i);
+					if (t->isBinaryOperator()) {
+						state = sOperator;
+						continue;
 					}
+					break;
 				}
-				i += tokenAt(i + 1)->isBinaryOperator() ? 2 : 1;
+				else if (t->convertToUnaryOperator()) {
+					t = tokenAt(++i);
+					continue;
+				}
+				else {
+					//error
+					cout << "error: expect evaluable token, got " << t->value << endl;
+					break;
+				}
 			}
-			else if (t->convertToUnaryOperator()) {
-				i += 1;
+
+			else if (state == sOperator) {
+				t = tokenAt(++i);
+				state = sEvaluable;
+				continue;
 			}
-			else break;
-			t = tokenAt(i);
+
+			else {
+				cout << "error: unknown state" << state << endl;
+				break;
+			}
+		}
+
+		if (state != sEvaluable) {
+			throwException(t, "incomplete expression");
 		}
 		return i;
 	}
