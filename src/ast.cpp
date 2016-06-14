@@ -1,5 +1,6 @@
 #include "ast.h"
 #include <iostream>
+#include <stack>
 
 namespace Lang {
 	void throwException(Token* t, string e) {
@@ -71,14 +72,16 @@ namespace Lang {
 	AST::Node* AST::parseExpr(unsigned int begin, unsigned int end) {
 		int opi = EOF;
 		int priority = 99;
-		for (auto i = begin; i < end; i++) cout << tokenAt(i)->value; cout << endl;
 		for (auto i = begin; i < end; i++) {
 			auto t = tokenAt(i);
-			if (t->type == Token::Type::tLParen) {
+			if (t->isLiteral()) {
+				continue;
+			}
+			if (t->isOperator("(")) {
 				int pcnt = 0;
 				for (auto j = i; j < end; j++) {
-					if (tokenAt(j)->type == Token::Type::tLParen) pcnt++;
-					if (tokenAt(j)->type == Token::Type::tRParen) pcnt--;
+					if (tokenAt(j)->isOperator("(")) pcnt++;
+					if (tokenAt(j)->isOperator(")")) pcnt--;
 					if (pcnt == 0) {
 						i = j;
 						break;
@@ -86,15 +89,7 @@ namespace Lang {
 				}
 				continue;
 			}
-			if (t->kind == Token::Kind::kOperator) {
-				auto pt = tokenAt(i - 1);
-				if (pt->kind != Token::Kind::kIdentifier &&
-					pt->kind != Token::Kind::kLiteral &&
-					pt->type != Token::Type::tRParen) {
-					if (!t->convertToUnaryOperator()) {
-						cout << "error: unexpected operator " << t->value << endl;
-					}
-				}
+			if (t->isOperator()) {
 				if (t->isUnaryOperator() && t->getPriority() < priority ||
 					t->isBinaryOperator() && t->getPriority() <= priority) {
 					opi = i;
@@ -105,7 +100,6 @@ namespace Lang {
 
 		if (opi != EOF) {
 			auto op = token(opi);
-			cout << "op: " << op->value << " u:" << op->isUnaryOperator() << endl;
 			auto node = new Node(op);
 			if (op->isBinaryOperator()) {
 				node->addChild(parseExpr(begin, opi));
@@ -116,22 +110,22 @@ namespace Lang {
 			}
 			else {
 				//error
-				cout << "error: unexpected operator " << op->value << endl;
+				throwException(op, "error: unexpected operator " + op->value);
 			}
 			return node;
 		} else {
 			auto t = tokenAt(begin);
-			if (t->type == Token::Type::tLParen) {
+			if (t->isOperator("(")) {
 				return parseExpr(begin + 1, end - 1);
 			}
-			else if (t->kind == Token::Kind::kIdentifier) {
-				if (tokenAt(begin + 1)->type == Token::Type::tLParen) {
+			else if (t->isIdentifier()) {
+				if (tokenAt(begin + 1)->isOperator("(")) {
 					return parseFunc(begin, end);
 				} else {
 					return new Node(t);
 				}
 			}
-			else if (t->kind == Token::Kind::kLiteral) {
+			else if (t->isLiteral()) {
 				return new Node(t);
 			}
 			else {
@@ -149,11 +143,11 @@ namespace Lang {
 		begin += 2;
 		for (auto i = begin; i < end; i++) {
 			auto t = tokenAt(i);
-			if (t->type == Token::Type::tLParen) {
+			if (t->isOperator("(")) {
 				int pcnt = 0;
 				for (auto j = i; j < end; j++) {
-					if (tokenAt(j)->type == Token::Type::tLParen) pcnt++;
-					if (tokenAt(j)->type == Token::Type::tRParen) pcnt--;
+					if (tokenAt(j)->isOperator("(")) pcnt++;
+					if (tokenAt(j)->isOperator(")")) pcnt--;
 					if (pcnt == 0) {
 						i = j;
 						break;
@@ -161,7 +155,7 @@ namespace Lang {
 				}
 				continue;
 			}
-			if (t->type == Token::Type::tComma || t->type == Token::Type::tRParen) {
+			if (t->isOperator(",") || t->isOperator(")")) {
 				node->addChild(parseExpr(begin, i));
 				begin = i + 1;
 			}
@@ -190,25 +184,19 @@ namespace Lang {
 				}
 				else if (t->isIdentifier()) {
 					if (tokenAt(i + 1)->isOperator("(")) { //function
-						int pcnt = 0;
-						for (auto j = i + 1; j < tokens.size(); j++) {
-							if (tokenAt(j)->isOperator("(")) pcnt++;
-							if (tokenAt(j)->isOperator(")")) pcnt--;
-							if (pcnt == 0) {
-								i = j;
-								break;
-							}
+						for (i += 2; i < tokens.size(); i++) {
+							i = detectExprEnd(i);
+							if (tokenAt(i)->isOperator(",")) continue;
+							if (tokenAt(i)->isOperator(")")) break;
+						}
+						if (!tokenAt(i)->isOperator(")")) {
+							throwException(t, "error: unclosed function call");
 						}
 					}
 					else if (tokenAt(i + 1)->isOperator("[")) { //array
-						int pcnt = 0;
-						for (auto j = i + 1; j < tokens.size(); j++) {
-							if (tokenAt(j)->isOperator("[")) pcnt++;
-							if (tokenAt(j)->isOperator("]")) pcnt--;
-							if (pcnt == 0) {
-								i = j;
-								break;
-							}
+						i = detectExprEnd(i + 2);
+						if (!tokenAt(i)->isOperator("]")) {
+							throwException(t, "error: unclosed subscript");
 						}
 					}
 					else { //variable
@@ -223,15 +211,7 @@ namespace Lang {
 					break;
 				}
 				else if (t->isOperator("(")) {
-					int pcnt = 0;
-					for (auto j = i; j < tokens.size(); j++) {
-						if (tokenAt(j)->isOperator("(")) pcnt++;
-						if (tokenAt(j)->isOperator(")")) pcnt--;
-						if (pcnt == 0) {
-							i = j;
-							break;
-						}
-					}
+					i = detectExprEnd(i + 1);
 
 					t = tokenAt(++i);
 					if (t->isBinaryOperator()) {
@@ -246,7 +226,7 @@ namespace Lang {
 				}
 				else {
 					//error
-					cout << "error: expect evaluable token, got " << t->value << endl;
+					throwException(t, "error: expect evaluable token, got " + t->value);
 					break;
 				}
 			}
@@ -258,14 +238,153 @@ namespace Lang {
 			}
 
 			else {
-				cout << "error: unknown state" << state << endl;
+				throwException(t, "error: unknown state");
 				break;
 			}
 		}
 
-		if (state != sEvaluable) {
-			throwException(t, "incomplete expression");
-		}
 		return i;
 	}
+
+
+
+
+
+
+	/*
+	AST::Node* AST::parseExpr(unsigned int begin) {
+		enum State {
+			sEvaluable,
+			sOperator,
+		};
+		auto stack = std::stack<Node*>();
+		auto state = sEvaluable;
+		auto i = begin;
+		auto t = tokenAt(i);
+		while (t != emptyToken) {
+			Node* node = nullptr;
+			if (state == sEvaluable) {
+				if (t->isLiteral()) {
+					node = new Node(t);
+
+					if (stack.empty()) {
+						stack.push(node);
+					}
+					else if (stack.top()->token->isOperator()) {
+						stack.top()->addChild(node);
+					} else {
+						//error
+						//throwException(t, "error: expect evaluable token, got " + t->value);
+					}
+
+					t = tokenAt(++i);
+					if (t->isBinaryOperator()) {
+						state = sOperator;
+						continue;
+					}
+					break;
+				}
+				else if (t->isIdentifier()) {
+					if (tokenAt(i + 1)->isOperator("(")) { //function
+						//node = parseFunc(i);
+					} else if (tokenAt(i + 1)->isOperator("[")) { //array
+						//node = parseArray(i);
+					} else { //variable
+						node = new Node(t);
+					}
+
+					if (stack.empty()) {
+						stack.push(node);
+					} else if (stack.top()->token->isOperator()) {
+						stack.top()->addChild(node);
+					} else {
+						//error
+						//throwException(t, "error: expect evaluable token, got " + t->value);
+					}
+
+					t = tokenAt(++i);
+					if (t->isBinaryOperator()) {
+						state = sOperator;
+						continue;
+					}
+					break;
+				}
+				else if (t->isOperator("(")) {
+					i++;//(
+					node = parseExpr(i);
+					i++;//)
+
+					if (stack.empty()) {
+						stack.push(node);
+					} else if (stack.top()->token->isOperator()) {
+						stack.top()->addChild(node);
+					} else {
+						//error
+						//throwException(t, "error: expect evaluable token, got " + t->value);
+					}
+
+					t = tokenAt(++i);
+					if (t->isBinaryOperator()) {
+						state = sOperator;
+						continue;
+					}
+					break;
+				}
+				else if (t->convertToUnaryOperator()) {
+					node = new Node(t);
+
+					if (stack.empty()) {
+						stack.push(node);
+					} else if (stack.top()->token->isOperator()) {
+						stack.top()->addChild(node);
+					} else {
+						//error
+						//throwException(t, "error: expect evaluable token, got " + t->value);
+					}
+
+					t = tokenAt(++i);
+					continue;
+				}
+				else {
+					//error
+					throwException(t, "error: expect evaluable token, got " + t->value);
+					break;
+				}
+			}
+
+			else if (state == sOperator) {
+				node = new Node(t);
+				if (stack.top()->token->isBinaryOperator() &&
+					t->getPriority() > stack.top()->token->getPriority()) {
+					node->addChild(stack.top()->children[1]);
+
+				}
+				else {
+					node->addChild(stack.top());
+					stack.pop();
+					stack.push(node);
+				}
+			else {
+					if (t->getPriority() > stack.top()->token->getPriority()) {
+
+					} else {
+						node->addChild(stack.top());
+						stack.pop();
+						stack.push(node);
+					}
+				}
+				t = tokenAt(++i);
+				state = sEvaluable;
+				continue;
+			}
+
+			else {
+				throwException(t, "error: unknown state");
+				break;
+			}
+		}
+
+		return i;
+	}
+	*/
 }

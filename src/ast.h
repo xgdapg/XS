@@ -54,6 +54,9 @@ namespace Lang {
 		Node* parseFunc(unsigned int begin, unsigned int end);
 
 		int detectExprEnd(unsigned int begin);
+
+
+		Node* parseExpr(unsigned int i);
 	};
 	
 

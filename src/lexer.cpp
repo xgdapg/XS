@@ -27,7 +27,7 @@ namespace Lang {
 		if (fs.is_open()) {
 			string str;
 			while (getline(fs, str)) {
-				cout << "lines: " << lines.size() << ", length: " << str.length() << endl;
+				//cout << "lines: " << lines.size() << ", length: " << str.length() << endl;
 				lines.push_back(str + endl);
 			}
 			row = 0;
