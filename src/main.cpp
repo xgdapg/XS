@@ -13,16 +13,17 @@ string printNode(Lang::AST::Node* node);
 
 int main()
 {
-	auto lexer = new Lang::Lexer("test.txt");
 	try {
-		auto tokens = lexer->getTokens();
-		auto ast = new Lang::AST(tokens);
-		int i = ast->detectExprEnd(0);
-		stringstream ss;
-		for (int j = 0; j < i; j++) ss << tokens[j]->value;
-		auto node = ast->parseExpr(0, i);
-		saveTree(node, ss.str());
-		saveLex(tokens);
+		auto lexer = new Lang::Lexer("test.txt");
+		auto ast = new Lang::AST(lexer);
+		ast->parse();
+		saveTree(ast->root);
+		//int i = ast->detectExprEnd(0);
+		//stringstream ss;
+		//for (int j = 0; j < i; j++) ss << lexer->tokens[j]->value;
+		//auto node = ast->parseExpr(0, i);
+		//saveTree(node, ss.str());
+		//saveLex(lexer->tokens);
 	} catch (exception e) {
 		cout << e.what() << endl;
 		system("pause");

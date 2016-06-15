@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "token.h"
+#include "lexer.h"
 
 using namespace std;
 
@@ -30,26 +31,28 @@ namespace Lang {
 			}
 		};
 
-		Node* Root;
-		vector<Token*> tokens;
-		unsigned int index;
-		Token* emptyToken;
+		Node* root;
+		Lexer* lex;
 
-		AST(vector<Token*> ts) {
-			Root = new Node();
-			tokens = ts;
+		//vector<Token*> tokens;
+		int index;
+		//Token* emptyToken;
+
+		AST(Lexer* l) {
+			root = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "", 0, 0));
+			lex = l;
 			index = 0;
-			emptyToken = new Token(Token::Kind::kUnknown, Token::Type::tUnknown, "", 0, 0);
 		}
 
 		Token* token(unsigned int i = 0);
-		Token* tokenAt(unsigned int i = 0);
 
-		void buildWithTokens(vector<Token*> tokens);
+		//void buildWithTokens(vector<Token*> tokens);
+		//
+		//Node* createDeclareVar();
+		//Node* createAssign();
+		//Node* createExpr();
 
-		Node* createDeclareVar();
-		Node* createAssign();
-		Node* createExpr();
+		void parse();
 
 		int detectExprEnd(unsigned int begin);
 
@@ -57,7 +60,7 @@ namespace Lang {
 		Node* parseFunc(unsigned int begin, unsigned int end);
 		Node* parseSubscript(unsigned int begin, unsigned int end);
 
-
+		Node* parseDeclVar(unsigned int begin);
 
 	};
 	

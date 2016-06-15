@@ -9,16 +9,6 @@
 #define EOL EOF
 
 namespace Lang {
-	vector<Token*> Lexer::getTokens() {
-		if (tokens.size() == 0) {
-			if (!loadFile(file)) {
-				throwException("Fail to open file");
-			}
-			parse();
-		}
-		return tokens;
-	}
-
 	bool Lexer::loadFile(string file) {
 		lines = vector<string>();
 		string endl = getEndl(file);
@@ -40,6 +30,9 @@ namespace Lang {
 	}
 
 	void Lexer::parse() {
+		if (!loadFile(file)) {
+			throwException("Fail to open file");
+		}
 		while (row < lines.size()) {
 			c = getLineChar(0);
 			//cout << "row: " << row + 1 << ", c: " << c << endl;
@@ -194,12 +187,17 @@ namespace Lang {
 		}
 
 		auto token = new Token(kind, type, value, row + 1, col + 1);
+		token->index = tokens.size();
+		token->lex = this;
 		tokens.push_back(token);
 		movePtr(value.length());
 
 		if (kind == Token::Kind::kKeyword && (value == "true" || value == "false")) {
 			token->kind = Token::Kind::kLiteral;
 			token->type = Token::Type::tBoolean;
+		}
+		if (kind == Token::Kind::kKeyword) {
+			if (value == "var") token->type = Token::Type::tDeclareVar;
 		}
 		if (kind == Token::Kind::kOperator) {
 			if (value == "+") token->type = Token::Type::tPlus;
@@ -227,6 +225,8 @@ namespace Lang {
 			else if (value == "]") token->type = Token::Type::tRBracket;
 			else if (value == "{") token->type = Token::Type::tLBrace;
 			else if (value == "}") token->type = Token::Type::tRBrace;
+
+			else if (value == "=") token->type = Token::Type::tAssign;
 		}
 	}
 

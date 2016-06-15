@@ -13,13 +13,13 @@ namespace Lang {
 		Lexer(string path) {
 			tokens = vector<Token*>();
 			file = path;
+			parse();
 		}
 
-		vector<Token*> getTokens();
+		vector<Token*> tokens;
 
 	private:
 		string         file;
-		vector<Token*> tokens;
 
 		vector<string> lines;
 		unsigned int   row = 0;

@@ -6,16 +6,19 @@
 using namespace std;
 
 namespace Lang {
+	class Lexer;
 	class Token {
 	public:
+		static Token* Empty;
+
 		enum Kind {
 			kUnknown,
 			kKeyword,
 			kLiteral,
 			kIdentifier,
 			kOperator,
-			kUnaryOperator,
 			kComment,
+			kBlock,
 		};
 
 		enum Type {
@@ -94,6 +97,8 @@ namespace Lang {
 
 			tFuncCall, //
 			tSubscript, //
+
+			tTypeBinding,
 		};
 
 		Kind   kind  = Kind::kUnknown;
@@ -101,6 +106,8 @@ namespace Lang {
 		string value = "";
 		int    row   = 0;
 		int    col   = 0;
+		int    index = 0;
+		Lexer* lex   = nullptr;
 
 		Token(Kind k, Type t, string v, int r, int c) {
 			kind  = k;
@@ -109,6 +116,8 @@ namespace Lang {
 			row   = r;
 			col   = c;
 		}
+
+		Token* next(int offset = 1);
 
 		//¶þÔª²Ù×÷·û
 		bool isBinaryOperator() {
@@ -124,7 +133,7 @@ namespace Lang {
 			case Type::tGreaterThan:
 			case Type::tGreaterEqual:
 			case Type::tLogicAnd:
-			case Type::tLogicOr:;
+			case Type::tLogicOr:
 			case Type::tDot: return true;
 			}
 			return false;
@@ -194,6 +203,18 @@ namespace Lang {
 
 		bool isOperator(string t) {
 			return isOperator() && value == t;
+		}
+
+		bool isKeyword() {
+			return kind == Kind::kKeyword;
+		}
+
+		bool isKeyword(Type t) {
+			return isKeyword() && type == t;
+		}
+
+		bool isKeyword(string t) {
+			return isKeyword() && value == t;
 		}
 	};
 }
