@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <sstream>
 #include "token.h"
 
@@ -12,8 +13,10 @@ namespace Lang {
 	public:
 		Lexer(string path) {
 			tokens = vector<Token*>();
+			tokenList = list<Token*>();
 			file = path;
 			parse();
+			makeArray();
 		}
 
 		vector<Token*> tokens;
@@ -24,6 +27,8 @@ namespace Lang {
 		vector<string> lines;
 		unsigned int   row = 0;
 		unsigned int   col = 0;
+
+		list<Token*> tokenList;
 
 		bool loadFile(string file);
 
@@ -41,5 +46,7 @@ namespace Lang {
 		char getLineChar(unsigned int offset);
 		string getEndl(string file);
 		void throwException(string e);
+
+		void makeArray();
 	};
 }

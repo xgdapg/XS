@@ -15,15 +15,16 @@ int main()
 {
 	try {
 		auto lexer = new Lang::Lexer("test.txt");
-		auto ast = new Lang::AST(lexer);
-		ast->parse();
-		saveTree(ast->root);
+		//auto ast = new Lang::AST(lexer);
+		//ast->parse();
+		//saveTree(ast->root);
+
 		//int i = ast->detectExprEnd(0);
 		//stringstream ss;
 		//for (int j = 0; j < i; j++) ss << lexer->tokens[j]->value;
 		//auto node = ast->parseExpr(0, i);
 		//saveTree(node, ss.str());
-		//saveLex(lexer->tokens);
+		saveLex(lexer->tokens);
 	} catch (exception e) {
 		cout << e.what() << endl;
 		system("pause");

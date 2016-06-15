@@ -94,7 +94,6 @@ namespace Lang {
 			}
 			
 			addToken(ss.str(), Keywords.find(ss.str()) == Keywords.end() ? Token::Kind::kIdentifier : Token::Kind::kKeyword);
-			continue;
 		}
 	}
 
@@ -181,15 +180,16 @@ namespace Lang {
 	
 
 	void Lexer::addToken(string value, Token::Kind kind, Token::Type type) {
-		if (true && kind == Token::Kind::kComment) {
+		bool skipComment = true;
+		if (skipComment && kind == Token::Kind::kComment) {
 			movePtr(value.length());
 			return;
 		}
 
 		auto token = new Token(kind, type, value, row + 1, col + 1);
-		token->index = tokens.size();
+		token->index = tokenList.size();
 		token->lex = this;
-		tokens.push_back(token);
+		tokenList.push_back(token);
 		movePtr(value.length());
 
 		if (kind == Token::Kind::kKeyword && (value == "true" || value == "false")) {
@@ -228,6 +228,7 @@ namespace Lang {
 
 			else if (value == "=") token->type = Token::Type::tAssign;
 		}
+
 	}
 
 	void Lexer::movePtr(unsigned int offset) {
@@ -293,5 +294,41 @@ namespace Lang {
 	void Lexer::throwException(string e) {
 		cout << "[" << row + 1 << "," << col + 1 << "] ";
 		throw exception(e.c_str());
+	}
+
+	void Lexer::makeArray() {
+		bool skipComment = true;
+		int i = 0;
+		int row = 1;
+		for (auto t : tokenList) {
+			if (skipComment && t->isComment()) continue;
+
+			if (t->row > row) {
+				row = t->row;
+				int i = tokens.size() - 1;
+				while (i >= 0 && tokens[i]->isComment()) i--;
+				auto c = tokens[i];
+				if (!c->isTerminator() && (
+					c->isIdentifier() ||
+					c->isLiteral() ||
+					c->isOperator(")") ||
+					c->isOperator("]") ||
+					c->isOperator("}") ||
+					c->isKeyword("break") ||
+					c->isKeyword("continue") ||
+					c->isKeyword("return")))
+				{
+					auto token = new Token(Token::Kind::kTerminator, Token::Type::tSemicolon, ";", row - 1, c->col + c->value.length());
+					token->index = tokens.size();
+					token->lex = this;
+					tokens.push_back(token);
+				}
+
+			}
+
+			t->index = tokens.size();
+			t->lex = this;
+			tokens.push_back(t);
+		}
 	}
 }
