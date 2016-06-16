@@ -181,7 +181,7 @@ namespace Lang {
 		}
 
 		auto name = t->next();
-		auto tb = new Node(new Token(Token::Kind::kOperator, Token::Type::tTypeBinding, "TypeBinding", name->row, name->col));
+		auto tb = new Node(new Token(Token::Kind::kOperator, Token::Type::tDeclareVar, "DeclareVar", name->row, name->col));
 		tb->addChild(new Node(name));
 
 		int i = name->index + 1;

@@ -98,7 +98,7 @@ namespace Lang {
 			tFuncCall, //
 			tSubscript, //
 
-			tTypeBinding,
+			//tTypeBinding,
 		};
 
 		Kind   kind  = Kind::kUnknown;
