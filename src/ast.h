@@ -44,7 +44,7 @@ namespace Lang {
 			//index = 0;
 		}
 
-		Token* token(unsigned int i = 0);
+		//Token* token(unsigned int i = 0);
 
 		//void buildWithTokens(vector<Token*> tokens);
 		//
@@ -52,22 +52,25 @@ namespace Lang {
 		//Node* createAssign();
 		//Node* createExpr();
 
-		void parse();
+		//void parse();
 
 		//int detectExprEnd(unsigned int begin);
 
-		Node* parseExpr(int begin, int end);
-		Node* parseFunc(int begin, int end);
-		Node* parseSubscript(int begin, int end);
-
-		Node* parseDeclVar(int begin, int end);
-
-		int findPair(int begin, int end, string l, string r);
-		int findStatement(int begin, int end);
+		//Node* parseExpr(int begin, int end);
+		//Node* parseFunc(int begin, int end);
+		//Node* parseSubscript(int begin, int end);
+		//
+		//Node* parseDeclVar(int begin, int end);
+		//
+		//int findPair(int begin, int end, string l, string r);
+		//int findStatement(int begin, int end);
 
 
 		int index = 0;
 		Token* tk(int offset = 0);
+
+		void parse();
+
 		Node* parsePrimaryExpr();
 		Node* parseFuncCall();
 		Node* parseSubscript();
