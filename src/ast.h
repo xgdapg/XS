@@ -64,6 +64,18 @@ namespace Lang {
 
 		int findPair(int begin, int end, string l, string r);
 		int findStatement(int begin, int end);
+
+
+		int index = 0;
+		Token* tk(int offset = 0);
+		Node* parsePrimaryExpr();
+		Node* parseFuncCall();
+		Node* parseSubscript();
+		Node* parseParenExpr();
+		Node* parseExpression();
+		Node* parseDeclVar();
+
+		Node* buildTree(vector<Node*> list, int begin, int end);
 	};
 	
 

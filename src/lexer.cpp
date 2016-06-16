@@ -293,7 +293,7 @@ namespace Lang {
 	void Lexer::makeArray() {
 		//auto insert ;
 		int row = 1;
-		auto check = [&](int t_row) {
+		auto check = [&](int t_row) {return;
 			if (t_row > row) {
 				row = t_row;
 				int i = tokens.size() - 1;
