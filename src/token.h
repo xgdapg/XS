@@ -19,7 +19,6 @@ namespace Lang {
 			kOperator,
 			kComment,
 			kBlock,
-			kTerminator,
 		};
 
 		enum Type {
@@ -216,10 +215,6 @@ namespace Lang {
 
 		bool isKeyword(string t) {
 			return isKeyword() && value == t;
-		}
-
-		bool isTerminator() {
-			return kind == Kind::kTerminator;
 		}
 
 		bool isComment() {

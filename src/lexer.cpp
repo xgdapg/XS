@@ -180,15 +180,7 @@ namespace Lang {
 	
 
 	void Lexer::addToken(string value, Token::Kind kind, Token::Type type) {
-		bool skipComment = true;
-		if (skipComment && kind == Token::Kind::kComment) {
-			movePtr(value.length());
-			return;
-		}
-
 		auto token = new Token(kind, type, value, row + 1, col + 1);
-		token->index = tokenList.size();
-		token->lex = this;
 		tokenList.push_back(token);
 		movePtr(value.length());
 
@@ -218,6 +210,8 @@ namespace Lang {
 
 			else if (value == ".") token->type = Token::Type::tDot;
 			else if (value == ",") token->type = Token::Type::tComma;
+			else if (value == ";") token->type = Token::Type::tSemicolon;
+			else if (value == ":") token->type = Token::Type::tColon;
 
 			else if (value == "(") token->type = Token::Type::tLParen;
 			else if (value == ")") token->type = Token::Type::tRParen;
@@ -308,17 +302,16 @@ namespace Lang {
 				int i = tokens.size() - 1;
 				while (i >= 0 && tokens[i]->isComment()) i--;
 				auto c = tokens[i];
-				if (!c->isTerminator() && (
-					c->isIdentifier() ||
+				if (c->isIdentifier() ||
 					c->isLiteral() ||
 					c->isOperator(")") ||
 					c->isOperator("]") ||
 					c->isOperator("}") ||
 					c->isKeyword("break") ||
 					c->isKeyword("continue") ||
-					c->isKeyword("return")))
+					c->isKeyword("return"))
 				{
-					auto token = new Token(Token::Kind::kTerminator, Token::Type::tSemicolon, ";", row - 1, c->col + c->value.length());
+					auto token = new Token(Token::Kind::kOperator, Token::Type::tSemicolon, ";", c->row, c->col + c->value.length());
 					token->index = tokens.size();
 					token->lex = this;
 					tokens.push_back(token);
