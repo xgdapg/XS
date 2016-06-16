@@ -291,14 +291,11 @@ namespace Lang {
 	}
 
 	void Lexer::makeArray() {
-		bool skipComment = true;
-		int i = 0;
+		//auto insert ;
 		int row = 1;
-		for (auto t : tokenList) {
-			if (skipComment && t->isComment()) continue;
-
-			if (t->row > row) {
-				row = t->row;
+		auto check = [&](int t_row) {
+			if (t_row > row) {
+				row = t_row;
 				int i = tokens.size() - 1;
 				while (i >= 0 && tokens[i]->isComment()) i--;
 				auto c = tokens[i];
@@ -318,10 +315,18 @@ namespace Lang {
 				}
 
 			}
+		};
+
+		bool skipComment = true;
+		for (auto t : tokenList) {
+			check(t->row);
+
+			if (skipComment && t->isComment()) continue;
 
 			t->index = tokens.size();
 			t->lex = this;
 			tokens.push_back(t);
 		}
+		check(tokens.back()->row + 1);
 	}
 }

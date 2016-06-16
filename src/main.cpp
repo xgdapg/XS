@@ -15,9 +15,9 @@ int main()
 {
 	try {
 		auto lexer = new Lang::Lexer("test.txt");
-		//auto ast = new Lang::AST(lexer);
-		//ast->parse();
-		//saveTree(ast->root);
+		auto ast = new Lang::AST(lexer);
+		ast->parse();
+		saveTree(ast->root);
 
 		//int i = ast->detectExprEnd(0);
 		//stringstream ss;

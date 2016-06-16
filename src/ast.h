@@ -35,13 +35,13 @@ namespace Lang {
 		Lexer* lex;
 
 		//vector<Token*> tokens;
-		int index;
+		//int index;
 		//Token* emptyToken;
 
 		AST(Lexer* l) {
 			root = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "", 0, 0));
 			lex = l;
-			index = 0;
+			//index = 0;
 		}
 
 		Token* token(unsigned int i = 0);
@@ -54,14 +54,16 @@ namespace Lang {
 
 		void parse();
 
-		int detectExprEnd(unsigned int begin);
+		//int detectExprEnd(unsigned int begin);
 
-		Node* parseExpr(unsigned int begin, unsigned int end);
-		Node* parseFunc(unsigned int begin, unsigned int end);
-		Node* parseSubscript(unsigned int begin, unsigned int end);
+		Node* parseExpr(int begin, int end);
+		Node* parseFunc(int begin, int end);
+		Node* parseSubscript(int begin, int end);
 
-		Node* parseDeclVar(unsigned int begin);
+		Node* parseDeclVar(int begin, int end);
 
+		int findPair(int begin, int end, string l, string r);
+		int findStatement(int begin, int end);
 	};
 	
 

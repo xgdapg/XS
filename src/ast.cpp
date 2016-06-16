@@ -13,6 +13,196 @@ namespace Lang {
 		return Token::Empty;
 	}
 
+	void AST::parse() {
+		int index = 0;
+		do {
+			auto t = token(index);
+			if (t->isOperator(";")) {
+				index++;
+				continue;
+			}
+
+			int begin = index;
+			int end = findStatement(begin, lex->tokens.size() - 1);
+			if (end <= begin) break;
+			index = end + 1;
+
+			if (t->isKeyword("var")) {
+				root->addChild(parseDeclVar(begin, end));
+				continue;
+			}
+			//...
+			do {
+				root->addChild(parseExpr(begin, end));
+			} while (0);
+		} while (index < (int)lex->tokens.size());
+	}
+
+	int AST::findPair(int begin, int end, string l, string r) {
+		int pcnt = 0;
+		for (auto i = begin; i <= end; i++) {
+			if (token(i)->isOperator(l)) pcnt++;
+			if (token(i)->isOperator(r)) pcnt--;
+			if (pcnt == 0) {
+				return i;
+			}
+		}
+		throwException(token(begin), "error: unclosed pair "+l+r);
+		return begin;
+	}
+
+	int AST::findStatement(int begin, int end) {
+		auto i = begin;
+		for (; i <= end; i++) {
+			auto t = token(i);
+			if (t->isOperator("(")) { i = findPair(i, end, "(", ")"); continue; }
+			if (t->isOperator("[")) { i = findPair(i, end, "[", "]"); continue; }
+			if (t->isOperator("{")) { i = findPair(i, end, "{", "}"); continue; }
+			if (t->isOperator(")")) goto unmatched;
+			if (t->isOperator("]")) goto unmatched;
+			if (t->isOperator("}")) goto unmatched;
+			if (t->isOperator(";")) return i - 1;
+		}
+		throwException(token(i), "error: terminator not found");
+		unmatched:
+		throwException(token(i), "error: unmatched " + token(i)->value);
+		return begin;
+	}
+
+	AST::Node* AST::parseExpr(int begin, int end) {
+		for (int i = begin; i <= end; i++) {
+			if (i == begin || token(i - 1)->isBinaryOperator() || token(i - 1)->isUnaryOperator()) {
+				token(i)->convertToUnaryOperator();
+			}
+		}
+		int opi = EOF;
+		int priority = 99;
+		for (auto i = begin; i <= end; i++) {
+			auto t = token(i);
+			if (t->isLiteral()) {
+				continue;
+			}
+			if (t->isIdentifier()) {
+				if (token(i + 1)->isOperator("(")) { //function
+					i = findPair(i + 1, end, "(", ")");
+				}
+				else if (token(i + 1)->isOperator("[")) { //subscript
+					i = findPair(i + 1, end, "[", "]");
+				}
+				else { //variable
+
+				}
+				continue;
+			}
+			if (t->isOperator("(")) {
+				i = findPair(i, end, "(", ")");
+				continue;
+			}
+			
+			if (t->isUnaryOperator()  && t->getPriority() <  priority ||
+				t->isBinaryOperator() && t->getPriority() <= priority)
+			{
+				opi = i;
+				priority = t->getPriority();
+			}
+		}
+
+		if (opi != EOF) {
+			auto op = token(opi);
+			auto node = new Node(op);
+			if (op->isBinaryOperator()) {
+				node->addChild(parseExpr(begin, opi - 1));
+				node->addChild(parseExpr(opi + 1, end));
+			}
+			else if (op->isUnaryOperator()) {
+				node->addChild(parseExpr(opi + 1, end));
+			}
+			else {
+				//error
+				throwException(op, "error: unexpected operator " + op->value);
+			}
+			return node;
+		} else {
+			auto t = token(begin);
+			if (t->isLiteral()) {
+				return new Node(t);
+			}
+			if (t->isIdentifier()) {
+				if (token(begin + 1)->isOperator("(")) { //function
+					return parseFunc(begin, end);
+				}
+				else if (token(begin + 1)->isOperator("[")) { //subscript
+					return parseSubscript(begin, end);
+				}
+				else { //variable
+					return new Node(t);
+				}
+			}
+			if (t->isOperator("(")) {
+				return parseExpr(begin + 1, end - 1);
+			}
+			//error
+			throwException(t, "error: unexpected token " + t->value);
+		}
+		return nullptr;
+	}
+
+	AST::Node* AST::parseFunc(int begin, int end) {
+		auto name = token(begin);
+		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tFuncCall, "FuncCall", name->row, name->col));
+		node->addChild(new Node(name));
+		begin += 2;
+		for (auto i = begin; i <= end; i++) {
+			auto t = token(i);
+			if (t->isOperator("(")) {
+				i = findPair(i, end - 1, "(", ")");
+				continue;
+			}
+			if (t->isOperator(",") || t->isOperator(")")) {
+				node->addChild(parseExpr(begin, i));
+				begin = i + 1;
+			}
+		}
+		return node;
+	}
+
+	AST::Node* AST::parseSubscript(int begin, int end) {
+		auto name = token(begin);
+		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "Subscript", name->row, name->col));
+		node->addChild(new Node(name));
+		node->addChild(parseExpr(begin + 2, end - 1));
+		return node;
+	}
+
+	AST::Node* AST::parseDeclVar(int begin, int end) {
+		auto t = token(begin);
+		if (!t->next()->isIdentifier()) {
+			throwException(t->next(), "expect identifier, got " + t->next()->value);
+		}
+
+		auto name = t->next();
+		auto tb = new Node(new Token(Token::Kind::kOperator, Token::Type::tTypeBinding, "TypeBinding", name->row, name->col));
+		tb->addChild(new Node(name));
+
+		int i = name->index + 1;
+		if (name->next()->isOperator(":") && name->next(2)->isIdentifier()) {
+			tb->addChild(new Node(name->next(2)));
+			i += 2;
+		}
+
+		if (i < end && token(i)->isOperator("=")) {
+			auto assign = new Node(token(i));
+			assign->addChild(tb);
+			assign->addChild(parseExpr(i + 1, end));
+			return assign;
+		}
+
+		return tb;
+	}
+	
+
+
+
 	/*
 	void AST::buildWithTokens(vector<Token*> tokens) {
 		while (token() != emptyToken) {
@@ -67,68 +257,7 @@ namespace Lang {
 	}
 	*/
 
-
-
-
-
-	void AST::parse() {
-		index = 0;
-		while (index < (int)lex->tokens.size()) {
-			auto t = token(index);
-
-			if (t->isKeyword("var")) {
-				root->addChild(parseDeclVar(index));
-				continue;
-			}
-
-			int i = detectExprEnd(index);
-			cout << "detectExprEnd " << index << " " << i << endl;
-			if (i > index) {
-				root->addChild(parseExpr(index, i));
-				index = i;
-				continue;
-			}
-
-			break;
-		}
-	}
-
-	AST::Node* AST::parseDeclVar(unsigned int begin) {
-		auto t = token(begin);
-		if (!t->next()->isIdentifier()) {
-			throwException(t->next(), "expect identifier, got " + t->next()->value);
-		}
-
-		auto name = t->next();
-		auto tb = new Node(new Token(
-			Token::Kind::kOperator,
-			Token::Type::tTypeBinding,
-			"TypeBinding",
-			name->row, name->col));
-		tb->addChild(new Node(name));
-
-		int i = name->index + 1;
-		if (name->next()->isOperator(":") && name->next(2)->isIdentifier()) {
-			tb->addChild(new Node(name->next(2)));
-			i += 2;
-		}
-		index = i;
-
-		if (token(i)->isOperator("=")) {
-			auto assign = new Node(token(i));
-			assign->addChild(tb);
-			int j = detectExprEnd(i + 1);
-			if (j <= i + 1) {
-				throwException(token(i + 1), "expect expression, got " + token(i + 1)->value);
-			}
-			assign->addChild(parseExpr(i + 1, j));
-			index = j;
-			return assign;
-		}
-
-		return tb;
-	}
-
+	/*
 	int AST::detectExprEnd(unsigned int begin) {
 		enum State {
 			sEvaluable,
@@ -204,136 +333,6 @@ namespace Lang {
 
 		return i;
 	}
-
-	AST::Node* AST::parseExpr(unsigned int begin, unsigned int end) {
-		int opi = EOF;
-		int priority = 99;
-		for (auto i = begin; i < end; i++) {
-			auto t = token(i);
-			if (t->isLiteral()) {
-				continue;
-			}
-			if (t->isIdentifier()) {
-				if (token(i + 1)->isOperator("(")) { //function
-					int pcnt = 0;
-					for (auto j = i + 1; j < end; j++) {
-						if (token(j)->isOperator("(")) pcnt++;
-						if (token(j)->isOperator(")")) pcnt--;
-						if (pcnt == 0) {
-							i = j;
-							break;
-						}
-					}
-				} else if (token(i + 1)->isOperator("[")) { //subscript
-					int pcnt = 0;
-					for (auto j = i + 1; j < end; j++) {
-						if (token(j)->isOperator("[")) pcnt++;
-						if (token(j)->isOperator("]")) pcnt--;
-						if (pcnt == 0) {
-							i = j;
-							break;
-						}
-					}
-				} else { //variable
-
-				}
-				continue;
-			}
-			if (t->isOperator("(")) {
-				int pcnt = 0;
-				for (auto j = i; j < end; j++) {
-					if (token(j)->isOperator("(")) pcnt++;
-					if (token(j)->isOperator(")")) pcnt--;
-					if (pcnt == 0) {
-						i = j;
-						break;
-					}
-				}
-				continue;
-			}
-			
-			if (t->isUnaryOperator()  && t->getPriority() <  priority ||
-				t->isBinaryOperator() && t->getPriority() <= priority)
-			{
-				opi = i;
-				priority = t->getPriority();
-			}
-		}
-
-		if (opi != EOF) {
-			auto op = token(opi);
-			auto node = new Node(op);
-			if (op->isBinaryOperator()) {
-				node->addChild(parseExpr(begin, opi));
-				node->addChild(parseExpr(opi + 1, end));
-			}
-			else if (op->isUnaryOperator()) {
-				node->addChild(parseExpr(opi + 1, end));
-			}
-			else {
-				//error
-				throwException(op, "error: unexpected operator " + op->value);
-			}
-			return node;
-		} else {
-			auto t = token(begin);
-			if (t->isLiteral()) {
-				return new Node(t);
-			}
-			if (t->isIdentifier()) {
-				if (token(begin + 1)->isOperator("(")) { //function
-					return parseFunc(begin, end);
-				}
-				else if (token(begin + 1)->isOperator("[")) { //subscript
-					return parseSubscript(begin, end);
-				}
-				else { //variable
-					return new Node(t);
-				}
-			}
-			if (t->isOperator("(")) {
-				return parseExpr(begin + 1, end - 1);
-			}
-			//error
-			throwException(t, "error: unexpected token " + t->value);
-		}
-		return nullptr;
-	}
-
-	AST::Node* AST::parseFunc(unsigned int begin, unsigned int end) {
-		auto name = token(begin);
-		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tFuncCall, "FuncCall", name->row, name->col));
-		node->addChild(new Node(name));
-		begin += 2;
-		for (auto i = begin; i < end; i++) {
-			auto t = token(i);
-			if (t->isOperator("(")) {
-				int pcnt = 0;
-				for (auto j = i; j < end; j++) {
-					if (token(j)->isOperator("(")) pcnt++;
-					if (token(j)->isOperator(")")) pcnt--;
-					if (pcnt == 0) {
-						i = j;
-						break;
-					}
-				}
-				continue;
-			}
-			if (t->isOperator(",") || t->isOperator(")")) {
-				node->addChild(parseExpr(begin, i));
-				begin = i + 1;
-			}
-		}
-		return node;
-	}
-
-	AST::Node* AST::parseSubscript(unsigned int begin, unsigned int end) {
-		auto name = token(begin);
-		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "Subscript", name->row, name->col));
-		node->addChild(new Node(name));
-		node->addChild(parseExpr(begin + 2, end - 1));
-		return node;
-	}
-	
+	*/
 
 }
