@@ -100,7 +100,7 @@ namespace Lang {
 		while (tk() != Token::Empty) {
 			auto t = tk();
 			if (t->isBinaryOperator() || t->isUnaryOperator()) {
-				if (isOp) t->convertToUnaryOperator();
+				if (isOp && !t->convertToUnaryOperator()) throwException(t, "expect unary operator, got " + t->value);
 				isOp = true;
 
 				list.push_back(new Node(t));
@@ -143,7 +143,7 @@ namespace Lang {
 				op->addChild(buildTree(list, opi + 1, end));
 			} else {
 				//error
-				throwException(op->token, "error: unexpected operator " + op->token->value);
+				throwException(op->token, "unexpected operator " + op->token->value);
 			}
 			return op;
 		}
@@ -161,6 +161,10 @@ namespace Lang {
 		auto dv = new Node(new Token(Token::Kind::kOperator, Token::Type::tDeclareVar, "DeclareVar", name->row, name->col));
 		dv->addChild(new Node(name));
 		index += 1;
+
+		if (!(tk()->isOperator(":") && tk(1)->isIdentifier()) && !tk()->isOperator("=")) {
+			throwException(tk(-1), "cannot determine the type of variable `" + tk(-1)->value + "`");
+		}
 
 		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
 			dv->addChild(new Node(tk(1)));
