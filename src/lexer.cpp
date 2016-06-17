@@ -198,6 +198,7 @@ namespace Lang {
 			else if (value == "-") token->type = Token::Type::tMinus;
 			else if (value == "*") token->type = Token::Type::tMulit;
 			else if (value == "/") token->type = Token::Type::tDivide;
+			else if (value == "%") token->type = Token::Type::tModulus;
 
 			else if (value == "==") token->type = Token::Type::tEqual;
 			else if (value == "<") token->type = Token::Type::tLessThan;

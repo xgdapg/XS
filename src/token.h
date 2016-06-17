@@ -54,6 +54,7 @@ namespace Lang {
 			tMinus, // -
 			tMulit, // *
 			tDivide, // /
+			tModulus, // %
 			tUnaryPlus, // +
 			tUnaryMinus, // -
 
@@ -129,6 +130,7 @@ namespace Lang {
 			case Type::tMinus:
 			case Type::tMulit:
 			case Type::tDivide:
+			case Type::tModulus:
 			case Type::tEqual:
 			case Type::tNotEqual:
 			case Type::tLessThan:
@@ -178,6 +180,7 @@ namespace Lang {
 			priority++;
 			if (type == Type::tMulit) return priority;
 			if (type == Type::tDivide) return priority;
+			if (type == Type::tModulus) return priority;
 			priority++;
 			if (isUnaryOperator()) return priority;
 			priority++;

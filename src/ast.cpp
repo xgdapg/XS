@@ -39,7 +39,12 @@ namespace Lang {
 				continue;
 			}
 
-			if (t->isOperator("=")) {
+			if (t->isOperator("=") || 
+				t->isOperator("+=") || 
+				t->isOperator("-=") || 
+				t->isOperator("*=") || 
+				t->isOperator("/=") || 
+				t->isOperator("%=")) {
 				parseAssign(block);
 				continue;
 			}
