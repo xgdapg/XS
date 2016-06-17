@@ -38,7 +38,7 @@ void saveLex(std::vector<Lang::Token*> tokens) {
 	fstream fs("test.lex.txt", ios::out);
 	stringstream ss;
 	ss << tokens[tokens.size() - 1]->row;
-	int width = ss.str().length();
+	auto width = ss.str().length();
 	for (auto token : tokens) {
 		//if (token->kind == Lang::Token::Kind::kComment) continue;
 		stringstream ss;

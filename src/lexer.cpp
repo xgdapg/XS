@@ -182,7 +182,7 @@ namespace Lang {
 	void Lexer::addToken(string value, Token::Kind kind, Token::Type type) {
 		auto token = new Token(kind, type, value, row + 1, col + 1);
 		tokenList.push_back(token);
-		movePtr(value.length());
+		movePtr((unsigned)value.length());
 
 		if (kind == Token::Kind::kKeyword && (value == "true" || value == "false")) {
 			token->kind = Token::Kind::kLiteral;
@@ -230,7 +230,7 @@ namespace Lang {
 		while (row < lines.size()) {
 			auto str = lines[row];
 			if (col >= str.length()) {
-				col -= str.length();
+				col -= (unsigned)str.length();
 				row++;
 				continue;
 			}
@@ -244,7 +244,7 @@ namespace Lang {
 		while (r < lines.size()) {
 			auto str = lines[r];
 			if (c >= str.length()) {
-				c -= str.length();
+				c -= (unsigned)str.length();
 				r++;
 				continue;
 			}
@@ -291,42 +291,12 @@ namespace Lang {
 	}
 
 	void Lexer::makeArray() {
-		//auto insert ;
-		int row = 1;
-		auto check = [&](int t_row) {return;
-			if (t_row > row) {
-				row = t_row;
-				int i = tokens.size() - 1;
-				while (i >= 0 && tokens[i]->isComment()) i--;
-				auto c = tokens[i];
-				if (c->isIdentifier() ||
-					c->isLiteral() ||
-					c->isOperator(")") ||
-					c->isOperator("]") ||
-					c->isOperator("}") ||
-					c->isKeyword("break") ||
-					c->isKeyword("continue") ||
-					c->isKeyword("return"))
-				{
-					auto token = new Token(Token::Kind::kOperator, Token::Type::tSemicolon, ";", c->row, c->col + c->value.length());
-					token->index = tokens.size();
-					token->lex = this;
-					tokens.push_back(token);
-				}
-
-			}
-		};
-
-		bool skipComment = true;
 		for (auto t : tokenList) {
-			check(t->row);
+			if (t->isComment()) continue;
 
-			if (skipComment && t->isComment()) continue;
-
-			t->index = tokens.size();
+			t->index = (int)tokens.size();
 			t->lex = this;
 			tokens.push_back(t);
 		}
-		check(tokens.back()->row + 1);
 	}
 }
