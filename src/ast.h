@@ -51,6 +51,7 @@ namespace Lang {
 		Node* parseParenExpr();
 		Node* parseExpression();
 		Node* parseDeclVar();
+		Node* parseDeclConst();
 		Node* parseIfExpr();
 		Node* parseAssign(Node* block);
 

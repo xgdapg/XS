@@ -29,6 +29,11 @@ namespace Lang {
 				continue;
 			}
 
+			if (t->isKeyword("const")) {
+				block->addChild(parseDeclConst());
+				continue;
+			}
+
 			if (t->isKeyword("if")) {
 				block->addChild(parseIfExpr());
 				continue;
@@ -195,7 +200,7 @@ namespace Lang {
 		index += 1;
 
 		if (!(tk()->isOperator(":") && tk(1)->isIdentifier()) && !tk()->isOperator("=")) {
-			throwException(tk(-1), "cannot determine the type of variable `" + tk(-1)->value + "`");
+			throwException(name, "cannot determine the type of variable `" + name->value + "`");
 		}
 
 		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
@@ -204,6 +209,30 @@ namespace Lang {
 		}
 
 		return dv;
+	}
+
+	AST::Node* AST::parseDeclConst() {
+		auto dc = new Node(tk());
+		index += 1;
+		const string;
+		auto name = tk();
+		if (!name->isIdentifier()) {
+			throwException(name, "expect identifier, got `" + name->value + "`");
+		}
+
+		dc->addChild(new Node(name));
+		index += 1;
+
+		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
+			dc->addChild(new Node(tk(1)));
+			index += 2;
+		}
+
+		if (!tk()->isOperator("=")) {
+			throwException(name, "constant value required");
+		}
+
+		return dc;
 	}
 
 	AST::Node* AST::parseIfExpr() {
