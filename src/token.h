@@ -46,6 +46,9 @@ namespace Lang {
 			tDeclareVar,
 			tDeclareConst,
 
+			tIf,
+			tElse,
+
 			//Operator
 			tPlus, // +
 			tMinus, // -

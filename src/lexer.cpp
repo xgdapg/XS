@@ -190,6 +190,8 @@ namespace Lang {
 		}
 		if (kind == Token::Kind::kKeyword) {
 			if (value == "var") token->type = Token::Type::tDeclareVar;
+			if (value == "if") token->type = Token::Type::tIf;
+			if (value == "else") token->type = Token::Type::tElse;
 		}
 		if (kind == Token::Kind::kOperator) {
 			if (value == "+") token->type = Token::Type::tPlus;

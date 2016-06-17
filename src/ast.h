@@ -31,52 +31,28 @@ namespace Lang {
 			}
 		};
 
-		Node* root;
-		Lexer* lex;
 
-		//vector<Token*> tokens;
-		//int index;
-		//Token* emptyToken;
+		Node*  root = nullptr;
+		Lexer* lex  = nullptr;
 
 		AST(Lexer* l) {
-			root = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "", 0, 0));
 			lex = l;
-			//index = 0;
 		}
 
-		//Token* token(unsigned int i = 0);
-
-		//void buildWithTokens(vector<Token*> tokens);
-		//
-		//Node* createDeclareVar();
-		//Node* createAssign();
-		//Node* createExpr();
-
-		//void parse();
-
-		//int detectExprEnd(unsigned int begin);
-
-		//Node* parseExpr(int begin, int end);
-		//Node* parseFunc(int begin, int end);
-		//Node* parseSubscript(int begin, int end);
-		//
-		//Node* parseDeclVar(int begin, int end);
-		//
-		//int findPair(int begin, int end, string l, string r);
-		//int findStatement(int begin, int end);
-
-
-		int index = 0;
+		int    index = 0;
 		Token* tk(int offset = 0);
 
 		void parse();
 
+		Node* parseBlock();
 		Node* parsePrimaryExpr();
 		Node* parseFuncCall();
 		Node* parseSubscript();
 		Node* parseParenExpr();
 		Node* parseExpression();
 		Node* parseDeclVar();
+		Node* parseIfExpr();
+		Node* parseAssign(Node* block);
 
 		Node* buildTree(vector<Node*> list, int begin, int end);
 	};

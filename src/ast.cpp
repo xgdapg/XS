@@ -15,18 +15,48 @@ namespace Lang {
 	}
 
 	void AST::parse() {
+		root = parseBlock();
+	}
+
+	AST::Node* AST::parseBlock() {
+		auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "Block", tk()->row, tk()->col));
+		if (tk()->isOperator("{")) index += 1;
+
 		while (tk() != Token::Empty) {
 			auto t = tk();
 			if (t->isKeyword("var")) {
-				root->addChild(parseDeclVar());
+				block->addChild(parseDeclVar());
 				continue;
+			}
+
+			if (t->isKeyword("if")) {
+				block->addChild(parseIfExpr());
+				continue;
+			}
+
+			if (t->isOperator("=")) {
+				parseAssign(block);
+				continue;
+			}
+
+			if (t->isOperator("{")) {
+				block->addChild(parseBlock());
+				continue;
+			}
+			if (t->isOperator("}")) {
+				index += 1;
+				break;
 			}
 			//...
 			auto n = parseExpression();
 			if (n != nullptr) {
-				root->addChild(n);
+				block->addChild(n);
+				continue;
 			}
+
+			throwException(t, "unmatched statement, got `" + t->value + "`");
 		}
+		return block;
 	}
 
 	AST::Node* AST::parsePrimaryExpr() {
@@ -61,7 +91,7 @@ namespace Lang {
 			node->addChild(parseExpression());
 			if (tk()->isOperator(",")) { index += 1; continue; }
 			if (tk()->isOperator(")")) break;
-			throwException(tk(), "expect , or ), got " + tk()->value);
+			throwException(tk(), "expect `,` or `)`, got `" + tk()->value + "`");
 		}
 		index += 1;
 		return node;
@@ -76,7 +106,7 @@ namespace Lang {
 		node->addChild(parseExpression());
 
 		if (!tk()->isOperator("]")) {
-			throwException(tk(), "expect ], got " + tk()->value);
+			throwException(tk(), "expect `]`, got `" + tk()->value + "`");
 		}
 		index += 1;
 		return node;
@@ -87,7 +117,7 @@ namespace Lang {
 		auto node = parseExpression();
 
 		if (!tk()->isOperator(")")) {
-			throwException(tk(), "expect ), got " + tk()->value);
+			throwException(tk(), "expect `)`, got `" + tk()->value + "`");
 		}
 
 		index += 1;
@@ -100,7 +130,7 @@ namespace Lang {
 		while (tk() != Token::Empty) {
 			auto t = tk();
 			if (t->isBinaryOperator() || t->isUnaryOperator()) {
-				if (isOp && !t->convertToUnaryOperator()) throwException(t, "expect unary operator, got " + t->value);
+				if (isOp && !t->convertToUnaryOperator()) throwException(t, "expect unary operator, got `" + t->value + "`");
 				isOp = true;
 
 				list.push_back(new Node(t));
@@ -116,7 +146,9 @@ namespace Lang {
 			}
 			break;
 		}
-		if (list.empty()) return nullptr;
+		if (list.empty()) {
+			throwException(tk(), "expect expression, got `" + tk()->value + "`");
+		}
 
 		return buildTree(list, 0, list.size() - 1);
 	}
@@ -143,7 +175,7 @@ namespace Lang {
 				op->addChild(buildTree(list, opi + 1, end));
 			} else {
 				//error
-				throwException(op->token, "unexpected operator " + op->token->value);
+				throwException(op->token, "unexpected operator `" + op->token->value + "`");
 			}
 			return op;
 		}
@@ -151,14 +183,14 @@ namespace Lang {
 	}
 
 	AST::Node* AST::parseDeclVar() {
+		auto dv = new Node(tk());
 		index += 1;
 
 		auto name = tk();
 		if (!name->isIdentifier()) {
-			throwException(name, "expect identifier, got " + name->value);
+			throwException(name, "expect identifier, got `" + name->value + "`");
 		}
 
-		auto dv = new Node(new Token(Token::Kind::kOperator, Token::Type::tDeclareVar, "DeclareVar", name->row, name->col));
 		dv->addChild(new Node(name));
 		index += 1;
 
@@ -171,20 +203,51 @@ namespace Lang {
 			index += 2;
 		}
 
-		if (tk()->isOperator("=")) {
-			auto assign = new Node(tk());
-			index += 1;
-			assign->addChild(dv);
-			auto t = tk();
-			auto e = parseExpression();
-			if (e == nullptr) {
-				throwException(t, "expect expression, got " + t->value);
-			}
-			assign->addChild(e);
-			return assign;
+		return dv;
+	}
+
+	AST::Node* AST::parseIfExpr() {
+		auto ifExpr = new Node(tk());
+		index += 1;
+
+		ifExpr->addChild(parseExpression());
+
+		if (!tk()->isOperator("{")) {
+			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
 		}
 
-		return dv;
+		ifExpr->addChild(parseBlock());
+		
+		if (tk()->isKeyword("else")) {
+			index += 1;
+			if (tk()->isKeyword("if")) {
+				ifExpr->addChild(parseIfExpr());
+			} else if (tk()->isOperator("{")) {
+				ifExpr->addChild(parseBlock());
+			} else {
+				throwException(tk(), "expect `{` or `if`, got `" + tk()->value + "`");
+			}
+		}
+
+		return ifExpr;
+	}
+
+	AST::Node* AST::parseAssign(Node* block) {
+		if (block->children.empty()) throwException(tk(), "lvalue not found");
+
+		auto lv = block->children.back();
+		//if (lv->token->isLiteral()) throwException(tk(), "invalid lvalue");
+
+		auto assign = new Node(tk());
+		index += 1;
+
+		assign->addChild(lv);
+		lv->parent = assign;
+		block->children[block->children.size() - 1] = assign;
+
+		assign->addChild(parseExpression());
+
+		return assign;
 	}
 
 	
