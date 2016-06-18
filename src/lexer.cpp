@@ -81,7 +81,7 @@ namespace Lang {
 				addToken(ss.str(), Token::Kind::kOperator);
 				continue;
 			}
-			if (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ':' || c == ',' || c == '.' || c == '&') {
+			if (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ':' || c == ',' || c == ';' || c == '.' || c == '&') {
 				ss << c;
 				addToken(ss.str(), Token::Kind::kOperator);
 				continue;

@@ -24,6 +24,11 @@ namespace Lang {
 
 		while (tk() != Token::Empty) {
 			auto t = tk();
+			if (t->isOperator(end)) {
+				index += 1;
+				break;
+			}
+
 			if (t->isKeyword("var")) {
 				block->addChild(parseDeclVar());
 				continue;
@@ -40,7 +45,12 @@ namespace Lang {
 			}
 
 			if (t->isKeyword("while")) {
-				block->addChild(parseWhile());
+				block->addChild(parseWhileLoop());
+				continue;
+			}
+
+			if (t->isKeyword("for")) {
+				block->addChild(parseForLoop());
 				continue;
 			}
 
@@ -57,10 +67,6 @@ namespace Lang {
 			if (t->isOperator("{")) {
 				block->addChild(parseBlock());
 				continue;
-			}
-			if (t->isOperator(end)) {
-				index += 1;
-				break;
 			}
 			//...
 			auto n = parseExpression(true);
@@ -140,23 +146,28 @@ namespace Lang {
 	}
 
 	AST::Node* AST::parseExpression(bool enableEmpty/*=false*/) {
+		enum State {
+			sOperator,
+			sPrimaryExpr,
+		};
 		auto list = vector<Node*>();
-		bool isOp = true;
+		State state = sOperator;
 		while (tk() != Token::Empty) {
 			auto t = tk();
 			if (t->isBinaryOperator() || t->isUnaryOperator()) {
-				if (isOp && !t->convertToUnaryOperator()) throwException(t, "expect unary operator, got `" + t->value + "`");
-				isOp = true;
+				if (state == sOperator && !t->convertToUnaryOperator()) throwException(t, "expect unary operator, got `" + t->value + "`");
 
 				list.push_back(new Node(t));
+				state = sOperator;
 				index += 1;
 				continue;
 			}
-			isOp = false;
 
+			if (state == sPrimaryExpr) break;
 			auto expr = parsePrimaryExpr();
 			if (expr != nullptr) {
 				list.push_back(expr);
+				state = sPrimaryExpr;
 				continue;
 			}
 			break;
@@ -166,10 +177,10 @@ namespace Lang {
 			throwException(tk(), "expect expression, got `" + tk()->value + "`");
 		}
 
-		if (isOp) {
+		if (state == sOperator) {
 			throwException(list.back()->token, "incomplete expression, end with `" + list.back()->token->value + "`");
 		}
-
+		
 		return buildTree(list, 0, list.size() - 1);
 	}
 
@@ -294,7 +305,7 @@ namespace Lang {
 		return assign;
 	}
 
-	AST::Node* AST::parseWhile() {
+	AST::Node* AST::parseWhileLoop() {
 		auto node = new Node(tk());
 		index += 1;
 
@@ -303,6 +314,25 @@ namespace Lang {
 		if (!tk()->isOperator("{")) {
 			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
 		}
+
+		node->addChild(parseBlock());
+
+		return node;
+	}
+
+	AST::Node* AST::parseForLoop() {
+		auto node = new Node(tk());
+		index += 1;
+
+		node->addChild(parseBlock(";"));
+
+		node->addChild(parseExpression());
+		if (!tk()->isOperator(";")) {
+			throwException(tk(), "expect `;`, got `" + tk()->value + "`");
+		}
+		index += 1;
+
+		node->addChild(parseBlock("{"));
 
 		node->addChild(parseBlock());
 

@@ -54,7 +54,8 @@ namespace Lang {
 		Node* parseDeclConst();
 		Node* parseIfExpr();
 		Node* parseAssign(Node* block);
-		Node* parseWhile();
+		Node* parseWhileLoop();
+		Node* parseForLoop();
 
 		Node* buildTree(vector<Node*> list, int begin, int end);
 	};
