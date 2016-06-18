@@ -161,9 +161,9 @@ namespace Lang {
 		int i = 0;
 		while (c != EOF) {
 			if (c == '.') {
-				if (hasDot) {
-					throwException("error: number format 2dot");
-				}
+				if (hasDot) throwException("error: number format 2dot");
+				char nc = getChar(i + 1);
+				if (!(nc >= '0' && nc <= '9')) break;
 				hasDot = true;
 				ss << c;
 			} else if (c >= '0' && c <= '9') {

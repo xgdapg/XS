@@ -39,7 +39,7 @@ namespace Lang {
 			tBlockComment,
 
 			//Keyword
-			tDefineFn,
+			tDefineFunction,
 			tDefineStruct,
 			tDefineInterface,
 
@@ -99,7 +99,8 @@ namespace Lang {
 			tLBrace, // {
 			tRBrace, // }
 
-			tFuncCall, //
+			tFnCall, //
+			tFnCallParams, //
 			tSubscript, //
 
 			tField, //
@@ -141,6 +142,8 @@ namespace Lang {
 			case Type::tGreaterEqual:
 			case Type::tLogicAnd:
 			case Type::tLogicOr:
+			case Type::tFnCall:
+			case Type::tSubscript:
 			case Type::tDot: return true;
 			}
 			return false;
@@ -187,6 +190,8 @@ namespace Lang {
 			if (isUnaryOperator()) return priority;
 			priority++;
 			if (type == Type::tDot) return priority;
+			if (type == Type::tFnCall) return priority;
+			if (type == Type::tSubscript) return priority;
 			priority++;
 			//error
 			cout << "error: operator " << value << " has no priority" << endl;
