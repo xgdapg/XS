@@ -44,16 +44,17 @@ namespace Lang {
 
 		void parse();
 
-		Node* parseBlock();
+		Node* parseBlock(string end = "}");
 		Node* parsePrimaryExpr();
 		Node* parseFuncCall();
 		Node* parseSubscript();
 		Node* parseParenExpr();
-		Node* parseExpression();
+		Node* parseExpression(bool enableEmpty = false);
 		Node* parseDeclVar();
 		Node* parseDeclConst();
 		Node* parseIfExpr();
 		Node* parseAssign(Node* block);
+		Node* parseWhile();
 
 		Node* buildTree(vector<Node*> list, int begin, int end);
 	};
