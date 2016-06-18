@@ -54,7 +54,7 @@ void saveLex(std::vector<Lang::Token*> tokens) {
 
 void saveTree(Lang::AST::Node* node, string expr) {
 	fstream fs("test.tree.html", ios::out);
-	fs << "<!DOCTYPE html><html><head><style type=\"text/css\">";
+	fs << "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><style type=\"text/css\">";
 	fs << "td{ vertical-align: top; }";
 	fs << "span{ display: block; text-align:center; }";
 	fs << "div{ border-style: solid; border-width: 1px; text-align:center; padding:2px; }";

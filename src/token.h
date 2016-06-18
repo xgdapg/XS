@@ -102,6 +102,8 @@ namespace Lang {
 			tFuncCall, //
 			tSubscript, //
 
+			tField, //
+
 			//tTypeBinding,
 		};
 

@@ -29,6 +29,11 @@ namespace Lang {
 				break;
 			}
 
+			if (t->isOperator(";")) {
+				index += 1;
+				continue;
+			}
+
 			if (t->isKeyword("var")) {
 				block->addChild(parseDeclVar());
 				continue;
@@ -51,6 +56,22 @@ namespace Lang {
 
 			if (t->isKeyword("for")) {
 				block->addChild(parseForLoop());
+				continue;
+			}
+
+			if (t->isKeyword("fn")) {
+				block->addChild(parseDeclFunc());
+				continue;
+			}
+
+			if (t->isKeyword("return")) {
+				auto node = new Node(tk());
+				index += 1;
+				auto expr = parseExpression(true);
+				if (expr != nullptr) {
+					node->addChild(expr);
+				}
+				block->addChild(node);
 				continue;
 			}
 
@@ -240,7 +261,7 @@ namespace Lang {
 	AST::Node* AST::parseDeclConst() {
 		auto node = new Node(tk());
 		index += 1;
-		const string;
+		
 		auto name = tk();
 		if (!name->isIdentifier()) {
 			throwException(name, "expect identifier, got `" + name->value + "`");
@@ -334,6 +355,89 @@ namespace Lang {
 
 		node->addChild(parseBlock("{"));
 
+		node->addChild(parseBlock());
+
+		return node;
+	}
+
+	AST::Node* AST::parseField() {
+		auto node = new Node(new Token(Token::Kind::kKeyword, Token::Type::tField, "", tk()->row, tk()->col));
+
+		auto flag = tk();
+		while (1) {
+			if (flag->isKeyword("const")) {
+				//save the flag
+				index += 1;
+				continue;
+			}
+			break;
+		}
+
+		auto name = tk();
+		if (!name->isIdentifier()) {
+			throwException(name, "expect identifier, got `" + name->value + "`");
+		}
+
+		node->addChild(new Node(name));
+		index += 1;
+
+		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
+			node->addChild(new Node(tk(1)));
+			index += 2;
+		} else {
+			throwException(name, "cannot determine the type of variable `" + name->value + "`");
+		}
+
+		if (tk()->isOperator("=")) {
+			index += 1;
+			node->addChild(parseExpression());
+		}
+
+		return node;
+	}
+
+	AST::Node* AST::parseDeclFunc() {
+		auto node = new Node(tk());
+		index += 1;
+		
+		//name
+		if (tk()->isIdentifier()) {
+			node->addChild(new Node(tk()));
+			index += 1;
+		} else {
+			node->addChild(new Node(Token::Empty));
+		}
+
+		if (!tk()->isOperator("(")) {
+			throwException(tk(), "expect `(`, got `" + tk()->value + "`");
+		}
+		index += 1;
+
+		auto params = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "Params", tk()->row, tk()->col));
+		node->addChild(params);
+		while (1) {
+			if (tk()->isOperator(")")) break;
+			if (tk()->isOperator(",")) { index += 1; continue; }
+			params->addChild(parseField());
+		}
+
+		index += 1; // eat )
+
+		if (tk()->isOperator("->")) {
+			index += 1;
+			if (tk()->isIdentifier()) {
+				node->addChild(new Node(tk()));
+				index += 1;
+			} else {
+				throwException(tk(), "expect function return type, got `" + tk()->value + "`");
+			}
+		} else {
+			node->addChild(new Node(Token::Empty));
+		}
+
+		if (!tk()->isOperator("{")) {
+			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
+		}
 		node->addChild(parseBlock());
 
 		return node;
