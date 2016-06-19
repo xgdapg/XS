@@ -64,6 +64,11 @@ namespace Lang {
 				continue;
 			}
 
+			if (t->isKeyword("struct")) {
+				block->addChild(parseDeclStruct());
+				continue;
+			}
+
 			if (t->isKeyword("return")) {
 				auto node = new Node(tk());
 				index += 1;
@@ -411,8 +416,7 @@ namespace Lang {
 
 		auto params = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "Params", tk()->row, tk()->col));
 		node->addChild(params);
-		while (1) {
-			if (tk()->isOperator(")")) break;
+		while (!tk()->isOperator(")")) {
 			if (tk()->isOperator(",")) { index += 1; continue; }
 			params->addChild(parseField());
 		}
@@ -439,7 +443,31 @@ namespace Lang {
 		return node;
 	}
 
-	
+	AST::Node* AST::parseDeclStruct() {
+		auto node = new Node(tk());
+		index += 1;
+
+		//name
+		if (tk()->isIdentifier()) {
+			node->addChild(new Node(tk()));
+			index += 1;
+		} else {
+			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
+		}
+
+		if (!tk()->isOperator("{")) {
+			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
+		}
+		index += 1;
+
+		while (!tk()->isOperator("}")) {
+			if (tk()->isOperator(",")) { index += 1; continue; }
+			node->addChild(parseField());
+		}
+		index += 1; // eat }
+
+		return node;
+	}
 	
 
 }

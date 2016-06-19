@@ -58,6 +58,7 @@ namespace Lang {
 		Node* parseForLoop();
 		Node* parseField();
 		Node* parseDeclFunc();
+		Node* parseDeclStruct();
 
 		Node* buildTree(vector<Node*> list, int begin, int end);
 	};
