@@ -74,6 +74,11 @@ namespace Lang {
 				continue;
 			}
 
+			if (t->isKeyword("interface")) {
+				block->addChild(parseDefineInterface());
+				continue;
+			}
+
 			if (t->isKeyword("return")) {
 				auto node = new Node(tk());
 				index += 1;
@@ -445,7 +450,7 @@ namespace Lang {
 		return node;
 	}
 
-	AST::Node* AST::parseDefineFunc() {
+	AST::Node* AST::parseDefineFunc(bool enableNoBody/*=false*/) {
 		auto node = new Node(tk());
 		index += 1;
 		
@@ -483,10 +488,12 @@ namespace Lang {
 			node->addChild(new Node(Token::Empty));
 		}
 
-		if (!tk()->isOperator("{")) {
-			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
+		if (tk()->isOperator("{")) {
+			node->addChild(parseBlock());
+		} else {
+			if (enableNoBody) node->addChild(new Node(Token::Empty));
+			else throwException(tk(), "expect `{`, got `" + tk()->value + "`");
 		}
-		node->addChild(parseBlock());
 
 		return node;
 	}
@@ -509,6 +516,7 @@ namespace Lang {
 		index += 1;
 
 		while (!tk()->isOperator("}")) {
+			if (tk()->isOperator(";")) { index += 1; continue; }
 			if (tk()->isOperator(",")) { index += 1; continue; }
 			node->addChild(parseField());
 		}
@@ -544,11 +552,46 @@ namespace Lang {
 
 		while (!tk()->isOperator("}")) {
 			auto t = tk();
+			if (t->isOperator(";")) { index += 1; continue; }
+			if (t->isOperator(",")) { index += 1; continue; }
 			if (t->isKeyword("fn")) {
 				node->addChild(parseDefineFunc());
 				continue;
 			}
 
+			throwException(t, "expect function definition, got `" + t->value + "`");
+		}
+		index += 1; // eat }
+
+		return node;
+	}
+
+	AST::Node* AST::parseDefineInterface() {
+		auto node = new Node(tk());
+		index += 1;
+
+		//name
+		if (tk()->isIdentifier()) {
+			node->addChild(new Node(tk()));
+			index += 1;
+		} else {
+			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
+		}
+
+		if (!tk()->isOperator("{")) {
+			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
+		}
+		index += 1;
+
+		while (!tk()->isOperator("}")) {
+			auto t = tk();
+			if (t->isOperator(";")) { index += 1; continue; }
+			if (t->isOperator(",")) { index += 1; continue; }
+
+			if (t->isKeyword("fn")) {
+				node->addChild(parseDefineFunc(true));
+				continue;
+			}
 			throwException(t, "expect function definition, got `" + t->value + "`");
 		}
 		index += 1; // eat }

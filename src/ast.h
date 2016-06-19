@@ -58,9 +58,10 @@ namespace Lang {
 		Node* parseForLoop();
 		Node* parseType();
 		Node* parseField();
-		Node* parseDefineFunc();
+		Node* parseDefineFunc(bool enableNoBody = false);
 		Node* parseDefineStruct();
 		Node* parseDefineImpl();
+		Node* parseDefineInterface();
 
 		Node* buildTree(vector<Node*> list, int begin, int end);
 	};
