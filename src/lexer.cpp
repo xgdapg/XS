@@ -211,6 +211,13 @@ namespace Lang {
 			else if (value == "||") token->type = Token::Type::tLogicOr;
 			else if (value == "!") token->type = Token::Type::tLogicNot;
 
+			else if (value == "&") token->type = Token::Type::tBinOpAnd;
+			else if (value == "|") token->type = Token::Type::tBinOpOr;
+			else if (value == "^") token->type = Token::Type::tBinOpXor;
+			else if (value == "~") token->type = Token::Type::tBinOpNot;
+			else if (value == "<<") token->type = Token::Type::tBinOpLShift;
+			else if (value == ">>") token->type = Token::Type::tBinOpRShift;
+
 			else if (value == ".") token->type = Token::Type::tDot;
 			else if (value == ",") token->type = Token::Type::tComma;
 			else if (value == ";") token->type = Token::Type::tSemicolon;

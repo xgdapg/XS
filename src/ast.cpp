@@ -60,12 +60,17 @@ namespace Lang {
 			}
 
 			if (t->isKeyword("fn")) {
-				block->addChild(parseDeclFunc());
+				block->addChild(parseDefineFunc());
 				continue;
 			}
 
 			if (t->isKeyword("struct")) {
-				block->addChild(parseDeclStruct());
+				block->addChild(parseDefineStruct());
+				continue;
+			}
+
+			if (t->isKeyword("impl")) {
+				block->addChild(parseDefineImpl());
 				continue;
 			}
 
@@ -382,10 +387,22 @@ namespace Lang {
 		node->addChild(new Node(name));
 		index += 1;
 
-		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
-			node->addChild(new Node(tk(1)));
+		if (!tk()->isOperator(":")) {
+			throwException(name, "expect `:`, got `" + tk()->value + "`");
+		}
+		index += 1;
+
+		if (tk()->isOperator("&") && tk(1)->isIdentifier()) {
+			auto ref = new Node(tk());
+			ref->addChild(new Node(tk(1)));
+			node->addChild(ref);
 			index += 2;
-		} else {
+		}
+		else if (tk()->isIdentifier()) {
+			node->addChild(new Node(tk()));
+			index += 1;
+		}
+		else {
 			throwException(name, "cannot determine the type of variable `" + name->value + "`");
 		}
 
@@ -397,7 +414,7 @@ namespace Lang {
 		return node;
 	}
 
-	AST::Node* AST::parseDeclFunc() {
+	AST::Node* AST::parseDefineFunc() {
 		auto node = new Node(tk());
 		index += 1;
 		
@@ -443,7 +460,7 @@ namespace Lang {
 		return node;
 	}
 
-	AST::Node* AST::parseDeclStruct() {
+	AST::Node* AST::parseDefineStruct() {
 		auto node = new Node(tk());
 		index += 1;
 
@@ -469,5 +486,42 @@ namespace Lang {
 		return node;
 	}
 	
+	AST::Node* AST::parseDefineImpl() {
+		auto node = new Node(tk());
+		index += 1;
 
+		//name
+		if (tk()->isIdentifier()) {
+			node->addChild(new Node(tk()));
+			index += 1;
+		} else {
+			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
+		}
+
+		//interface
+		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
+			node->addChild(new Node(tk(1)));
+			index += 2;
+		} else {
+			node->addChild(new Node(Token::Empty));
+		}
+
+		if (!tk()->isOperator("{")) {
+			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
+		}
+		index += 1;
+
+		while (!tk()->isOperator("}")) {
+			auto t = tk();
+			if (t->isKeyword("fn")) {
+				node->addChild(parseDefineFunc());
+				continue;
+			}
+
+			throwException(t, "expect function definition, got `" + t->value + "`");
+		}
+		index += 1; // eat }
+
+		return node;
+	}
 }

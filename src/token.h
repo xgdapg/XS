@@ -142,6 +142,11 @@ namespace Lang {
 			case Type::tGreaterEqual:
 			case Type::tLogicAnd:
 			case Type::tLogicOr:
+			case Type::tBinOpAnd:
+			case Type::tBinOpOr:
+			case Type::tBinOpXor:
+			case Type::tBinOpLShift:
+			case Type::tBinOpRShift:
 			case Type::tFnCall:
 			case Type::tSubscript:
 			case Type::tDot: return true;
@@ -164,6 +169,7 @@ namespace Lang {
 		bool convertToUnaryOperator() {
 			if (type == Type::tMinus) type = Type::tUnaryMinus;
 			if (type == Type::tPlus) type = Type::tUnaryPlus;
+			if (type == Type::tBinOpAnd) type = Type::tRef;
 			return isUnaryOperator();
 		}
 
