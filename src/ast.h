@@ -44,7 +44,7 @@ namespace Lang {
 
 		void parse();
 
-		Node* parseBlock(string end = "}");
+		Node* parseBlock(string end = "}", string sep = ";");
 		Node* parsePrimaryExpr();
 		Node* parseFuncCall();
 		Node* parseSubscript();

@@ -18,7 +18,7 @@ namespace Lang {
 		root = parseBlock();
 	}
 
-	AST::Node* AST::parseBlock(string end/*="}"*/) {
+	AST::Node* AST::parseBlock(string end/*="}"*/, string sep/*=";"*/) {
 		auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "Block", tk()->row, tk()->col));
 		if (tk()->isOperator("{")) index += 1;
 
@@ -29,7 +29,7 @@ namespace Lang {
 				break;
 			}
 
-			if (t->isOperator(";")) {
+			if (t->isOperator(sep)) {
 				index += 1;
 				continue;
 			}
@@ -341,7 +341,7 @@ namespace Lang {
 		auto node = new Node(tk());
 		index += 1;
 
-		node->addChild(parseBlock(";"));
+		node->addChild(parseBlock(";", ","));
 
 		node->addChild(parseExpression());
 		if (!tk()->isOperator(";")) {
@@ -349,7 +349,7 @@ namespace Lang {
 		}
 		index += 1;
 
-		node->addChild(parseBlock("{"));
+		node->addChild(parseBlock("{", ","));
 
 		node->addChild(parseBlock());
 
