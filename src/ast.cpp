@@ -250,13 +250,13 @@ namespace Lang {
 		node->addChild(new Node(name));
 		index += 1;
 
-		if (!(tk()->isOperator(":") && tk(1)->isIdentifier()) && !tk()->isOperator("=") && !tk()->isKeyword("in")) {
+		if (!tk()->isOperator(":") && !tk()->isOperator("=") && !tk()->isKeyword("in")) {
 			throwException(name, "cannot determine the type of variable `" + name->value + "`");
 		}
 
-		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
-			node->addChild(new Node(tk(1)));
-			index += 2;
+		if (tk()->isOperator(":")) {
+			index += 1;
+			node->addChild(parseType());
 		} else {
 			node->addChild(new Node(Token::Empty));
 		}
