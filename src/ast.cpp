@@ -366,6 +366,46 @@ namespace Lang {
 		return node;
 	}
 
+	AST::Node* AST::parseType() {
+		Node* ref = nullptr;
+		Node* name = nullptr;
+		Node* subscript = nullptr;
+
+		if (tk()->isOperator("&")) {
+			ref = new Node(tk());
+			index += 1;
+		} else {
+			ref = new Node(Token::Empty);
+		}
+
+		if (tk()->isIdentifier()) {
+			name = new Node(tk());
+			index += 1;
+		} else {
+			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
+		}
+
+		if (tk()->isOperator("[")) {
+			subscript = new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "Subscript", tk()->row, tk()->col));
+			index += 1;
+			if (tk()->isLiteral(Token::Type::tInteger)) {
+				subscript->addChild(new Node(tk()));
+				index += 1;
+			}
+			if (!tk()->isOperator("]")) {
+				throwException(tk(), "expect `]`, got `" + tk()->value + "`");
+			}
+			index += 1;
+		} else {
+			subscript = new Node(Token::Empty);
+		}
+
+		name->addChild(ref);
+		name->addChild(subscript);
+
+		return name;
+	}
+
 	AST::Node* AST::parseField() {
 		auto node = new Node(new Token(Token::Kind::kKeyword, Token::Type::tField, "Field", tk()->row, tk()->col));
 
@@ -379,36 +419,27 @@ namespace Lang {
 			break;
 		}
 
-		auto name = tk();
-		if (!name->isIdentifier()) {
-			throwException(name, "expect identifier, got `" + name->value + "`");
-		}
-
-		node->addChild(new Node(name));
-		index += 1;
-
-		if (!tk()->isOperator(":")) {
-			throwException(name, "expect `:`, got `" + tk()->value + "`");
-		}
-		index += 1;
-
-		if (tk()->isOperator("&") && tk(1)->isIdentifier()) {
-			auto ref = new Node(tk());
-			ref->addChild(new Node(tk(1)));
-			node->addChild(ref);
-			index += 2;
-		}
-		else if (tk()->isIdentifier()) {
+		//name
+		if (tk()->isIdentifier()) {
 			node->addChild(new Node(tk()));
 			index += 1;
-		}
-		else {
-			throwException(name, "cannot determine the type of variable `" + name->value + "`");
+		} else {
+			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
 		}
 
+		if (!tk()->isOperator(":")) {
+			throwException(tk(), "expect `:`, got `" + tk()->value + "`");
+		}
+		index += 1;
+
+		node->addChild(parseType());
+
+		//default value
 		if (tk()->isOperator("=")) {
-			index += 1;
 			node->addChild(parseExpression());
+			index += 1;
+		} else {
+			node->addChild(new Node(Token::Empty));
 		}
 
 		return node;

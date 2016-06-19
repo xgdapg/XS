@@ -212,6 +212,10 @@ namespace Lang {
 			return kind == Kind::kLiteral;
 		}
 
+		bool isLiteral(Type t) {
+			return isLiteral() && type == t;
+		}
+
 		bool isOperator() {
 			return kind == Kind::kOperator;
 		}

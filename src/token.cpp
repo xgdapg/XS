@@ -2,7 +2,7 @@
 #include "lexer.h"
 
 namespace Lang {
-	Token* Token::Empty = new Token(Token::Kind::kUnknown, Token::Type::tUnknown, "__EMPTY__", 0, 0);
+	Token* Token::Empty = new Token(Token::Kind::kUnknown, Token::Type::tUnknown, "#", 0, 0);
 
 	Token* Token::next(int offset) {
 		if (lex != nullptr) {
