@@ -56,8 +56,10 @@ namespace Lang {
 		Node* parseAssign(Node* block);
 		Node* parseWhileLoop();
 		Node* parseForLoop();
+		Node* parseTypeName();
 		Node* parseType();
 		Node* parseField();
+		Node* parseDefineName();
 		Node* parseDefineFunc(bool enableNoBody = false);
 		Node* parseDefineStruct();
 		Node* parseDefineImpl();

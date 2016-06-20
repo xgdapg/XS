@@ -105,6 +105,8 @@ namespace Lang {
 
 			tField, //
 
+			tType, //
+
 			//tTypeBinding,
 		};
 

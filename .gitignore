@@ -244,3 +244,6 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 
+/tests/test.tree.html
+/tests/MyLang.exe
+/tests/test.lex.txt

@@ -19,7 +19,7 @@ namespace Lang {
 	}
 
 	AST::Node* AST::parseBlock(string end/*="}"*/, string sep/*=";"*/) {
-		auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "Block", tk()->row, tk()->col));
+		auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", tk()->row, tk()->col));
 		if (tk()->isOperator("{")) index += 1;
 
 		while (tk() != Token::Empty) {
@@ -117,7 +117,7 @@ namespace Lang {
 	}
 
 	AST::Node* AST::parseFuncCall() {
-		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCallParams, "FnCallParams", tk()->row, tk()->col));
+		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCallParams, "_PARAMS_", tk()->row, tk()->col));
 		index += 1; // eat (
 		while (!tk()->isOperator(")")) {
 			node->addChild(parseExpression());
@@ -184,13 +184,13 @@ namespace Lang {
 				continue;
 			}
 			if (t->isOperator("(") && state == sPrimaryExpr) {
-				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCall, "FnCall", t->row, t->col)));
+				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCall, "_CALL_", t->row, t->col)));
 				list.push_back(parseFuncCall());
 				state = sPrimaryExpr;
 				continue;
 			}
 			if (t->isOperator("[") && state == sPrimaryExpr) {
-				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "Subscript", t->row, t->col)));
+				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "[]", t->row, t->col)));
 				list.push_back(parseSubscript());
 				state = sPrimaryExpr;
 				continue;
@@ -281,9 +281,11 @@ namespace Lang {
 		node->addChild(new Node(name));
 		index += 1;
 
-		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
-			node->addChild(new Node(tk(1)));
-			index += 2;
+		if (tk()->isOperator(":")) {
+			index += 1;
+			node->addChild(parseType());
+		} else {
+			node->addChild(new Node(Token::Empty));
 		}
 
 		if (!tk()->isOperator("=")) {
@@ -371,10 +373,31 @@ namespace Lang {
 		return node;
 	}
 
+	AST::Node* AST::parseTypeName() {
+		if (!tk()->isIdentifier()) {
+			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
+		}
+		auto name = new Node(tk());
+		index += 1;
+
+		if (tk()->isOperator("<")) {
+			index += 1;
+			while (!tk()->isOperator(">")) {
+				if (tk()->isOperator(",")) { index += 1; continue; }
+				name->addChild(parseType());
+			}
+			index += 1; //eat >
+		}
+
+		return name;
+	}
+
 	AST::Node* AST::parseType() {
 		Node* ref = nullptr;
 		Node* name = nullptr;
 		Node* subscript = nullptr;
+
+		auto type = new Node(new Token(Token::Kind::kOperator, Token::Type::tType, "_TYPE_", tk()->row, tk()->col));
 
 		if (tk()->isOperator("&")) {
 			ref = new Node(tk());
@@ -383,15 +406,10 @@ namespace Lang {
 			ref = new Node(Token::Empty);
 		}
 
-		if (tk()->isIdentifier()) {
-			name = new Node(tk());
-			index += 1;
-		} else {
-			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
-		}
+		name = parseTypeName();
 
 		if (tk()->isOperator("[")) {
-			subscript = new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "Subscript", tk()->row, tk()->col));
+			subscript = new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "[]", tk()->row, tk()->col));
 			index += 1;
 			if (tk()->isLiteral(Token::Type::tInteger)) {
 				subscript->addChild(new Node(tk()));
@@ -405,14 +423,16 @@ namespace Lang {
 			subscript = new Node(Token::Empty);
 		}
 
-		name->addChild(ref);
-		name->addChild(subscript);
 
-		return name;
+		type->addChild(ref);
+		type->addChild(name);
+		type->addChild(subscript);
+
+		return type;
 	}
 
 	AST::Node* AST::parseField() {
-		auto node = new Node(new Token(Token::Kind::kKeyword, Token::Type::tField, "Field", tk()->row, tk()->col));
+		auto node = new Node(new Token(Token::Kind::kKeyword, Token::Type::tField, "_FIELD_", tk()->row, tk()->col));
 
 		auto flag = tk();
 		while (1) {
@@ -450,14 +470,37 @@ namespace Lang {
 		return node;
 	}
 
+	AST::Node* AST::parseDefineName() {
+		if (!tk()->isIdentifier()) {
+			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
+		}
+		auto name = new Node(tk());
+		index += 1;
+
+		if (tk()->isOperator("<")) {
+			index += 1;
+			while (!tk()->isOperator(">")) {
+				if (tk()->isOperator(",")) { index += 1; continue; }
+				if (tk()->isIdentifier()) {
+					name->addChild(new Node(tk()));
+					index += 1;
+					continue;
+				}
+				throwException(tk(), "expect identifier, got `" + tk()->value + "`");
+			}
+			index += 1; //eat >
+		}
+
+		return name;
+	}
+
 	AST::Node* AST::parseDefineFunc(bool enableNoBody/*=false*/) {
 		auto node = new Node(tk());
 		index += 1;
 		
 		//name
 		if (tk()->isIdentifier()) {
-			node->addChild(new Node(tk()));
-			index += 1;
+			node->addChild(parseDefineName());
 		} else {
 			node->addChild(new Node(Token::Empty));
 		}
@@ -467,7 +510,7 @@ namespace Lang {
 		}
 		index += 1;
 
-		auto params = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "Params", tk()->row, tk()->col));
+		auto params = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_PARAMS_", tk()->row, tk()->col));
 		node->addChild(params);
 		while (!tk()->isOperator(")")) {
 			if (tk()->isOperator(",")) { index += 1; continue; }
@@ -478,12 +521,7 @@ namespace Lang {
 
 		if (tk()->isOperator("->")) {
 			index += 1;
-			if (tk()->isIdentifier()) {
-				node->addChild(new Node(tk()));
-				index += 1;
-			} else {
-				throwException(tk(), "expect function return type, got `" + tk()->value + "`");
-			}
+			node->addChild(parseType());
 		} else {
 			node->addChild(new Node(Token::Empty));
 		}
@@ -504,8 +542,7 @@ namespace Lang {
 
 		//name
 		if (tk()->isIdentifier()) {
-			node->addChild(new Node(tk()));
-			index += 1;
+			node->addChild(parseDefineName());
 		} else {
 			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
 		}
@@ -531,16 +568,15 @@ namespace Lang {
 
 		//name
 		if (tk()->isIdentifier()) {
-			node->addChild(new Node(tk()));
-			index += 1;
+			node->addChild(parseDefineName());
 		} else {
 			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
 		}
 
 		//interface
-		if (tk()->isOperator(":") && tk(1)->isIdentifier()) {
-			node->addChild(new Node(tk(1)));
-			index += 2;
+		if (tk()->isOperator(":")) {
+			index += 1;
+			node->addChild(parseDefineName());
 		} else {
 			node->addChild(new Node(Token::Empty));
 		}
@@ -572,8 +608,7 @@ namespace Lang {
 
 		//name
 		if (tk()->isIdentifier()) {
-			node->addChild(new Node(tk()));
-			index += 1;
+			node->addChild(parseDefineName());
 		} else {
 			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
 		}

@@ -1,13 +1,13 @@
 i*2+!-3.as(1,-2,3-4,b[2-3*4]).aa
 
-var a:int = 3*(4-5)+1
+var a:vector<list<int>> = 3*(4-5)+1
 var b = a
 for var i = 0,j=0; i < 3; i+=1,i=2 {
 	//print("i:"+i)
 }
 const b = a
 
-fn func1(v1: int, v2: float, v3: string, v4: bool) -> byte {
+fn func1<U,K>(v1: int, v2: float, v3: string, v4: bool) -> byte {
 	var i = 0 // int
 	if true && false || false {
 		i = 1
@@ -36,7 +36,7 @@ struct Point {
 }
 
 
-impl Point {
+impl Point<int> {
 	//ctor() {
 	//	self.x = 0
 	//	self.y = 0
