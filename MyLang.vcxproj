@@ -147,12 +147,14 @@
     <ClInclude Include="src\lang.h" />
     <ClInclude Include="src\lexer.h" />
     <ClInclude Include="src\token.h" />
+    <ClInclude Include="src\util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ast.cpp" />
     <ClCompile Include="src\lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\token.cpp" />
+    <ClCompile Include="src\util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
