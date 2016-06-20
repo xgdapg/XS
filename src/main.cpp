@@ -52,17 +52,38 @@ void saveLex(std::vector<Lang::Token*> tokens) {
 	fs.close();
 }
 
+string loadFile(string file) {
+	fstream fs(file, ios::in);
+	if (fs.is_open()) {
+		stringstream ss;
+		char ch;
+		while (!fs.eof()) {
+			fs.read(&ch, 1);
+			ss << ch;
+		}
+		fs.close();
+		return ss.str();
+	}
+	return "";
+}
+
 void saveTree(Lang::AST::Node* node, string expr) {
+	stringstream ss;
+	ss << "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><style type=\"text/css\">";
+	ss << "td{ vertical-align: top; }";
+	ss << "span{ display: block; text-align:center; }";
+	ss << "div{ border-style: solid; border-width: 1px; text-align:center; padding:2px; }";
+	ss << "</style></head><body><table><tr><td>";
+	ss << "<span>" + expr + "</span>";
+	ss << printNode(node);
+	ss << "</td></tr></table></body></html>";
 	fstream fs("test.tree.html", ios::out);
-	fs << "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><style type=\"text/css\">";
-	fs << "td{ vertical-align: top; }";
-	fs << "span{ display: block; text-align:center; }";
-	fs << "div{ border-style: solid; border-width: 1px; text-align:center; padding:2px; }";
-	fs << "</style></head><body><table><tr><td>";
-	fs << "<span>" + expr + "</span>";
-	fs << printNode(node);
-	fs << "</td></tr></table></body></html>";
+	fs << ss.str();
 	fs.close();
+
+	if (loadFile("test.tree.html") != loadFile("test.html")) {
+		cout << "test failed" << endl;
+	}
 }
 
 string printNode(Lang::AST::Node* node) {
