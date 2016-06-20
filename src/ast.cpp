@@ -184,7 +184,7 @@ namespace Lang {
 				continue;
 			}
 			if (t->isOperator("(") && state == sPrimaryExpr) {
-				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCall, "_CALL_", t->row, t->col)));
+				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCall, "_FNCALL_", t->row, t->col)));
 				list.push_back(parseFuncCall());
 				state = sPrimaryExpr;
 				continue;

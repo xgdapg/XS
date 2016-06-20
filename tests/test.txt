@@ -56,15 +56,15 @@ impl Point<int> {
 	}
 }
 
-//interface ToString {
-//	fn toString() -> string,
-//}
-//
-//impl Point : ToString {
-//	fn toString() -> string {
-//		return "Point(x:" + self.x.toString() + ", y:" + self.y.toString() + ")"
-//	}
-//}
+interface ToString {
+	fn toString() -> string,
+}
+
+impl Point : ToString {
+	fn toString() -> string {
+		return "Point(x:" + self.x.toString() + ", y:" + self.y.toString() + ")"
+	}
+}
 
 impl Point {
 	fn add(p: Point) {
