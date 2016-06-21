@@ -13,7 +13,7 @@ string printNode(Lang::AST::Node* node);
 
 int main()
 {
-	bool runTest = true;
+	bool runTest = false;
 	try {
 		auto list = getFiles("xs");
 		for (auto f : list) {
@@ -32,7 +32,10 @@ int main()
 					cout << "FAILED" << endl;
 				}
 			}
-			else saveToFile(f + ".html", createASTHtml(ast->root));
+			else {
+				saveToFile(f + ".html", createASTHtml(ast->root));
+				cout << "OK" << endl;
+			}
 		}
 	} catch (exception e) {
 		cout << endl << e.what() << endl;

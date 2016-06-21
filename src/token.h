@@ -102,6 +102,7 @@ namespace Lang {
 			tFnCall, //
 			tFnCallParams, //
 			tSubscript, //
+			tTuple, //
 
 			tField, //
 

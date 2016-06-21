@@ -142,14 +142,27 @@ namespace Lang {
 	}
 
 	AST::Node* AST::parseParenExpr() {
+		auto tp = tk();
 		index += 1;
 		auto node = parseExpression();
+
+		if (tk()->isOperator(",")) {
+			auto tuple = new Node(new Token(Token::Kind::kOperator, Token::Type::tTuple, "_TUPLE_", tp->row, tp->col));
+			tuple->addChild(node);
+			index += 1;
+			while (!tk()->isOperator(")")) {
+				if (tk()->isOperator(",")) { index += 1; continue; }
+				tuple->addChild(parseExpression());
+			}
+			index += 1;
+			return tuple;
+		}
 
 		if (!tk()->isOperator(")")) {
 			throwException(tk(), "expect `)`, got `" + tk()->value + "`");
 		}
-
 		index += 1;
+
 		return node;
 	}
 
@@ -190,7 +203,7 @@ namespace Lang {
 				continue;
 			}
 			if (t->isOperator("[") && state == sPrimaryExpr) {
-				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "[]", t->row, t->col)));
+				list.push_back(new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "_SUBSCRIPT_", t->row, t->col)));
 				list.push_back(parseSubscript());
 				state = sPrimaryExpr;
 				continue;
@@ -374,22 +387,32 @@ namespace Lang {
 	}
 
 	AST::Node* AST::parseTypeName() {
-		if (!tk()->isIdentifier()) {
-			throwException(tk(), "expect identifier, got `" + tk()->value + "`");
-		}
-		auto name = new Node(tk());
-		index += 1;
-
-		if (tk()->isOperator("<")) {
+		if (tk()->isIdentifier()) {
+			auto name = new Node(tk());
 			index += 1;
-			while (!tk()->isOperator(">")) {
-				if (tk()->isOperator(",")) { index += 1; continue; }
-				name->addChild(parseType());
+			if (tk()->isOperator("<")) {
+				index += 1;
+				while (!tk()->isOperator(">")) {
+					if (tk()->isOperator(",")) { index += 1; continue; }
+					name->addChild(parseType());
+				}
+				index += 1; //eat >
 			}
-			index += 1; //eat >
+			return name;
+		}
+		if (tk()->isOperator("(")) {
+			auto tuple = new Node(new Token(Token::Kind::kOperator, Token::Type::tTuple, "_TUPLE_", tk()->row, tk()->col));
+			index += 1;
+			while (!tk()->isOperator(")")) {
+				if (tk()->isOperator(",")) { index += 1; continue; }
+				tuple->addChild(parseType());
+			}
+			index += 1; //eat )
+			return tuple;
 		}
 
-		return name;
+		throwException(tk(), "expect type name, got `" + tk()->value + "`");
+		return nullptr;
 	}
 
 	AST::Node* AST::parseType() {
@@ -408,8 +431,9 @@ namespace Lang {
 
 		name = parseTypeName();
 
+		//不支持多维数组，可用泛型容器替代
 		if (tk()->isOperator("[")) {
-			subscript = new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "[]", tk()->row, tk()->col));
+			subscript = new Node(new Token(Token::Kind::kOperator, Token::Type::tSubscript, "_ARRAY_", tk()->row, tk()->col));
 			index += 1;
 			if (tk()->isLiteral(Token::Type::tInteger)) {
 				subscript->addChild(new Node(tk()));
