@@ -175,6 +175,9 @@ namespace Lang {
 		if (t->isOperator("(")) {
 			return parseParenExpr();
 		}
+		if (t->isKeyword("fn")) {
+			return parseDefineFunc(dfmValue);
+		}
 		return nullptr;
 	}
 
@@ -410,6 +413,9 @@ namespace Lang {
 			index += 1; //eat )
 			return tuple;
 		}
+		if (tk()->isKeyword("fn")) {
+			return parseDefineFunc(dfmType);
+		}
 
 		throwException(tk(), "expect type name, got `" + tk()->value + "`");
 		return nullptr;
@@ -518,12 +524,12 @@ namespace Lang {
 		return name;
 	}
 
-	AST::Node* AST::parseDefineFunc(bool enableNoBody/*=false*/) {
+	AST::Node* AST::parseDefineFunc(DefFuncMode mode) {
 		auto node = new Node(tk());
 		index += 1;
 		
 		//name
-		if (tk()->isIdentifier()) {
+		if ((mode == dfmNormal || mode == dfmInterface) && tk()->isIdentifier()) {
 			node->addChild(parseDefineName());
 		} else {
 			node->addChild(new Node(Token::Empty));
@@ -550,10 +556,10 @@ namespace Lang {
 			node->addChild(new Node(Token::Empty));
 		}
 
-		if (tk()->isOperator("{")) {
+		if ((mode == dfmNormal || mode == dfmInterface || mode == dfmValue) && tk()->isOperator("{")) {
 			node->addChild(parseBlock());
 		} else {
-			if (enableNoBody) node->addChild(new Node(Token::Empty));
+			if (mode == dfmInterface || mode == dfmType) node->addChild(new Node(Token::Empty));
 			else throwException(tk(), "expect `{`, got `" + tk()->value + "`");
 		}
 
@@ -648,7 +654,7 @@ namespace Lang {
 			if (t->isOperator(",")) { index += 1; continue; }
 
 			if (t->isKeyword("fn")) {
-				node->addChild(parseDefineFunc(true));
+				node->addChild(parseDefineFunc(dfmInterface));
 				continue;
 			}
 			throwException(t, "expect function definition, got `" + t->value + "`");

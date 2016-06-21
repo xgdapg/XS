@@ -44,6 +44,14 @@ namespace Lang {
 
 		void parse();
 
+	private:
+		enum DefFuncMode {
+			dfmNormal,
+			dfmInterface,
+			dfmType,
+			dfmValue,
+		};
+
 		Node* parseBlock(string end = "}", string sep = ";");
 		Node* parsePrimaryExpr();
 		Node* parseFuncCall();
@@ -60,7 +68,7 @@ namespace Lang {
 		Node* parseType();
 		Node* parseField();
 		Node* parseDefineName();
-		Node* parseDefineFunc(bool enableNoBody = false);
+		Node* parseDefineFunc(DefFuncMode mode = dfmNormal);
 		Node* parseDefineStruct();
 		Node* parseDefineImpl();
 		Node* parseDefineInterface();

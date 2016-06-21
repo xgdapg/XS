@@ -5,9 +5,9 @@ var b:(int[4],a) = (a)+(1+2,3)
 for var i = 0,j=0; i < 3; i+=1,i=2 {
 	//print("i:"+i)
 }
-const b = a
+const b:fn(i:int)->(int) = fn(i:int)->(int){a=b}
 
-fn func1<U,K>(v1: int, v2: float, v3: string, v4: bool) -> byte {
+fn func1<U,K>(v1: int, v2: float, v3: string, v4: bool) -> fn(i:int)->(int,int) {
 	var i = 0 // int
 	if true && false || false {
 		i = 1
