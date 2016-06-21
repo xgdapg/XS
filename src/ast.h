@@ -31,20 +31,19 @@ namespace Lang {
 			}
 		};
 
-
-		Node*  root = nullptr;
-		Lexer* lex  = nullptr;
-
 		AST(Lexer* l) {
 			lex = l;
 		}
 
-		int    index = 0;
-		Token* tk(int offset = 0);
+		Node* root = nullptr;
 
 		void parse();
 
 	private:
+		Lexer* lex  = nullptr;
+		int    index = 0;
+		Token* tk(int offset = 0);
+
 		enum DefFuncMode {
 			dfmNormal,
 			dfmInterface,
