@@ -20,6 +20,12 @@ int main()
 			if (runTest) cout << "testing " << f << "... ";
 			else         cout << "parsing " << f << "... ";
 
+			if (!isUTF8(getFileContent(f))) {
+				cout << "FAILED" << endl;
+				cout << "UTF-8 required" << endl;
+				continue;
+			}
+
 			auto lexer = new Lang::Lexer(f);
 			//saveLex(lexer->tokens);
 			auto ast = new Lang::AST(lexer);

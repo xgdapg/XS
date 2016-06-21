@@ -31,6 +31,47 @@ string getFileContent(string file) {
 	return "";
 }
 
+bool isUTF8(string content) {
+	auto printChar = [](char c) {
+		for (int i = 0; i < 8; i++) {
+			cout << ((c&(0b10000000 >> i)) == (0b10000000 >> i)) ? 1 : 0;
+		}
+		cout << endl;
+	};
+	auto isASCII = [](char c)->bool {
+		return (c & 0b01111111) == c;
+	};
+	auto getUTF8Len = [](char c)->int {
+		int n = 0;
+		int i = 0b10000000;
+		while (n < 4 && (c&i) == i) {
+			n++;
+			i >>= 1;
+		}
+		if ((c&(~(i >> 1))) == c) return n;
+		return -1;
+	};
+	auto isUTF8Body = [](char c)->bool {
+		return ((c & 0b10000000) == 0b10000000) && ((c & (char)0b10111111) == c);
+	};
+
+	int cnt = 0;
+	int j = 0;
+	for (auto c : content) {
+		j++;
+		if (cnt == 0) {
+			if (isASCII(c)) continue;
+			cnt = getUTF8Len(c);
+			if (cnt < 2) return false;
+			cnt -= 1;
+		} else {
+			if (!isUTF8Body(c)) return false;
+			cnt -= 1;
+		}
+	}
+	return true;
+}
+
 vector<string> getFiles(string ext) {
 	auto list = vector<string>();
 #ifdef _WIN32
