@@ -60,7 +60,7 @@ namespace Lang {
 		Node* parseDeclVar();
 		Node* parseDeclConst();
 		Node* parseIfExpr();
-		Node* parseAssign(Node* block);
+		void parseAssign(Node* block);
 		Node* parseWhileLoop();
 		Node* parseForLoop();
 		Node* parseTypeName();

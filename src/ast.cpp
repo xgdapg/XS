@@ -337,22 +337,23 @@ namespace Lang {
 		return node;
 	}
 
-	AST::Node* AST::parseAssign(Node* block) {
+	void AST::parseAssign(Node* block) {
 		if (block->children.empty()) throwException(tk(), "lvalue not found");
-
-		auto lv = block->children.back();
-		//if (lv->token->isLiteral()) throwException(tk(), "invalid lvalue");
 
 		auto assign = new Node(tk());
 		index += 1;
 
+		auto lv = block->children.back();
+		//if (!lv->token->isIdentifier() &&
+		//	!lv->token->isKeyword("var") &&
+		//	!lv->token->isKeyword("const")) throwException(tk(), "invalid lvalue");
+
 		assign->addChild(lv);
 		lv->parent = assign;
+
 		block->children[block->children.size() - 1] = assign;
 
 		assign->addChild(parseExpression());
-
-		return assign;
 	}
 
 	AST::Node* AST::parseWhileLoop() {

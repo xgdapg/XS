@@ -56,9 +56,7 @@ bool isUTF8(string content) {
 	};
 
 	int cnt = 0;
-	int j = 0;
 	for (auto c : content) {
-		j++;
 		if (cnt == 0) {
 			if (isASCII(c)) continue;
 			cnt = getUTF8Len(c);

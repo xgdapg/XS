@@ -1,5 +1,5 @@
 i*2+!-3.as(1,-2,3-4,b[2-3*4]).aa
-
+a=b=c
 var a:vector<list<int>>[4] = 3*(4-5)+1
 var b:(int[4],a) = (a)+(1+2,3)
 for var i = 0,j=0; i < 3; i+=1,i=2 {
