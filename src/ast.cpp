@@ -90,12 +90,7 @@ namespace Lang {
 				continue;
 			}
 
-			if (t->isOperator("=") || 
-				t->isOperator("+=") || 
-				t->isOperator("-=") || 
-				t->isOperator("*=") || 
-				t->isOperator("/=") || 
-				t->isOperator("%=")) {
+			if (t->isAssignOperator()) {
 				parseAssign(block);
 				continue;
 			}
@@ -178,6 +173,9 @@ namespace Lang {
 		if (t->isKeyword("fn")) {
 			return parseDefineFunc(dfmValue);
 		}
+		if (t->isKeyword("var")) {
+			return parseDeclVar();
+		}
 		return nullptr;
 	}
 
@@ -236,8 +234,9 @@ namespace Lang {
 		for (auto i = begin; i <= end; i++) {
 			if (!list[i]->children.empty()) continue;
 			auto t = list[i]->token;
-			if (t->isUnaryOperator()  && t->getPriority() <  priority ||
-				t->isBinaryOperator() && t->getPriority() <= priority)
+			if (t->isAssignOperator() && t->getPriority() <  priority ||
+				t->isUnaryOperator()  && t->getPriority() <  priority ||
+				t->isBinaryOperator() && t->getPriority() <= priority && !t->isAssignOperator())
 			{
 				opi = i;
 				priority = t->getPriority();
@@ -352,7 +351,7 @@ namespace Lang {
 		lv->parent = assign;
 
 		block->children[block->children.size() - 1] = assign;
-
+		
 		assign->addChild(parseExpression());
 	}
 

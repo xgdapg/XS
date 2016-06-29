@@ -131,6 +131,7 @@ namespace Lang {
 
 		//¶þÔª²Ù×÷·û
 		bool isBinaryOperator() {
+			if (isAssignOperator()) return true;
 			switch (type) {
 			case Type::tPlus:
 			case Type::tMinus:
@@ -178,6 +179,8 @@ namespace Lang {
 
 		int getPriority() {
 			int priority = 1;
+			if (isAssignOperator()) return priority;
+			priority++;
 			if (type == Type::tLogicOr) return priority;
 			priority++;
 			if (type == Type::tLogicAnd) return priority;
@@ -245,6 +248,18 @@ namespace Lang {
 
 		bool isComment() {
 			return kind == Kind::kComment;
+		}
+
+		bool isAssignOperator() {
+			if (isOperator()) {
+				if (value == "=") return true;
+				if (value == "+=") return true;
+				if (value == "-=") return true;
+				if (value == "*=") return true;
+				if (value == "/=") return true;
+				if (value == "%=") return true;
+			}
+			return false;
 		}
 	};
 }
