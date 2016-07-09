@@ -55,7 +55,6 @@ namespace Lang {
 			tMulit, // *
 			tDivide, // /
 			tModulus, // %
-			tUnaryPlus, // +
 			tUnaryMinus, // -
 
 			tAssign, // =
@@ -164,7 +163,6 @@ namespace Lang {
 			case Type::tLogicNot:
 			case Type::tBinOpNot:
 			case Type::tUnaryMinus:
-			case Type::tUnaryPlus:;
 			case Type::tRef: return true;
 			}
 			return false;
@@ -172,7 +170,6 @@ namespace Lang {
 
 		bool convertToUnaryOperator() {
 			if (type == Type::tMinus) type = Type::tUnaryMinus;
-			if (type == Type::tPlus) type = Type::tUnaryPlus;
 			if (type == Type::tBinOpAnd) type = Type::tRef;
 			return isUnaryOperator();
 		}
