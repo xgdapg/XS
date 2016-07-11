@@ -190,8 +190,12 @@ namespace Lang {
 		}
 		if (kind == Token::Kind::kKeyword) {
 			if (value == "var") token->type = Token::Type::tDeclareVar;
+			if (value == "const") token->type = Token::Type::tDeclareConst;
 			if (value == "if") token->type = Token::Type::tIf;
 			if (value == "else") token->type = Token::Type::tElse;
+			if (value == "loop") token->type = Token::Type::tLoop;
+			if (value == "break") token->type = Token::Type::tBreak;
+			if (value == "continue") token->type = Token::Type::tContinue;
 		}
 		if (kind == Token::Kind::kOperator) {
 			if (value == "+") token->type = Token::Type::tPlus;

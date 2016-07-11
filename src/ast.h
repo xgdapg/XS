@@ -57,12 +57,13 @@ namespace Lang {
 		Node* parseSubscript();
 		Node* parseParenExpr();
 		Node* parseExpression(bool enableEmpty = false);
-		Node* parseDeclVar();
-		Node* parseDeclConst();
+		Node* parseDeclVar(bool inLoop = false);
+		Node* parseDeclConst(bool inLoop = false);
 		Node* parseIfExpr();
 		void parseAssign(Node* block);
-		Node* parseWhileLoop();
-		Node* parseForLoop();
+		//Node* parseWhileLoop();
+		//Node* parseForLoop();
+		Node* parseLoop();
 		Node* parseTypeName();
 		Node* parseType();
 		Node* parseField();

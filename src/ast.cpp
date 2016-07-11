@@ -49,15 +49,20 @@ namespace Lang {
 				continue;
 			}
 
-			if (t->isKeyword("while")) {
-				block->addChild(parseWhileLoop());
+			if (t->isKeyword("loop")) {
+				block->addChild(parseLoop());
 				continue;
 			}
 
-			if (t->isKeyword("for")) {
-				block->addChild(parseForLoop());
-				continue;
-			}
+			//if (t->isKeyword("while")) {
+			//	block->addChild(parseWhileLoop());
+			//	continue;
+			//}
+			//
+			//if (t->isKeyword("for")) {
+			//	block->addChild(parseForLoop());
+			//	continue;
+			//}
 
 			if (t->isKeyword("fn")) {
 				block->addChild(parseDefineFunc());
@@ -258,7 +263,7 @@ namespace Lang {
 		return list[begin];
 	}
 
-	AST::Node* AST::parseDeclVar() {
+	AST::Node* AST::parseDeclVar(bool inLoop/*=false*/) {
 		auto node = new Node(tk());
 		index += 1;
 
@@ -270,7 +275,7 @@ namespace Lang {
 		node->addChild(new Node(name));
 		index += 1;
 
-		if (!tk()->isOperator(":") && !tk()->isOperator("=") && !tk()->isKeyword("in")) {
+		if (!tk()->isOperator(":") && !(!inLoop && tk()->isOperator("=")) && !(inLoop && tk()->isKeyword("in"))) {
 			throwException(name, "cannot determine the type of variable `" + name->value + "`");
 		}
 
@@ -284,7 +289,7 @@ namespace Lang {
 		return node;
 	}
 
-	AST::Node* AST::parseDeclConst() {
+	AST::Node* AST::parseDeclConst(bool inLoop/*=false*/) {
 		auto node = new Node(tk());
 		index += 1;
 		
@@ -303,7 +308,7 @@ namespace Lang {
 			node->addChild(new Node(Token::Empty));
 		}
 
-		if (!tk()->isOperator("=")) {
+		if (!(!inLoop && tk()->isOperator("=")) && !(inLoop && tk()->isKeyword("in"))) {
 			throwException(name, "constant value required");
 		}
 
@@ -321,7 +326,7 @@ namespace Lang {
 		}
 
 		node->addChild(parseBlock());
-		
+
 		if (tk()->isKeyword("else")) {
 			index += 1;
 			if (tk()->isKeyword("if")) {
@@ -331,6 +336,8 @@ namespace Lang {
 			} else {
 				throwException(tk(), "expect `{` or `if`, got `" + tk()->value + "`");
 			}
+		} else {
+			node->addChild(new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", 0, 0)));
 		}
 
 		return node;
@@ -354,7 +361,7 @@ namespace Lang {
 		
 		assign->addChild(parseExpression());
 	}
-
+	/*
 	AST::Node* AST::parseWhileLoop() {
 		auto node = new Node(tk());
 		index += 1;
@@ -385,6 +392,65 @@ namespace Lang {
 		node->addChild(parseBlock("{", ","));
 
 		node->addChild(parseBlock());
+
+		return node;
+	}
+	*/
+	AST::Node* AST::parseLoop() {
+		auto node = new Node(tk());
+		index += 1;
+
+		if (tk()->isOperator("{")) {
+			node->addChild(parseBlock());
+		}
+		else if (tk()->isKeyword("if")) {
+			auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", 0, 0));
+			node->addChild(block);
+			auto ifExpr = parseIfExpr();
+			block->addChild(ifExpr);
+
+			auto elseNode = ifExpr->children[2];
+			while (elseNode->token->isKeyword("if")) elseNode = elseNode->children[2];
+			elseNode->addChild(new Node(new Token(Token::Kind::kKeyword, Token::Type::tBreak, "break", 0, 0)));
+		}
+		else if (tk()->isKeyword("each")) {
+			auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", 0, 0));
+			node->addChild(block);
+
+			auto each = new Node(tk());
+			block->addChild(each);
+			index += 1;
+
+			if (tk()->isIdentifier()) {
+				each->addChild(new Node(tk()));
+				index += 1;
+			}
+			else if (tk()->isKeyword("var")) {
+				each->addChild(parseDeclVar(true));
+			}
+			else if (tk()->isKeyword("const")) {
+				each->addChild(parseDeclConst(true));
+			}
+			else {
+				throwException(tk(), "expect `var` or `const` or identifier, got `" + tk()->value + "`");
+			}
+
+			if (!tk()->isKeyword("in")) {
+				throwException(tk(), "expect `in`, got `" + tk()->value + "`");
+			}
+			index += 1;
+
+			each->addChild(parseExpression());
+
+			if (!tk()->isOperator("{")) {
+				throwException(tk(), "expect `{`, got `" + tk()->value + "`");
+			}
+			block->addChild(parseBlock());
+			
+		}
+		else {
+			throwException(tk(), "expect `{` or `if` or `each`, got `" + tk()->value + "`");
+		}
 
 		return node;
 	}

@@ -49,6 +49,10 @@ namespace Lang {
 			tIf,
 			tElse,
 
+			tLoop,
+			tBreak,
+			tContinue,
+
 			//Operator
 			tPlus, // +
 			tMinus, // -
@@ -127,6 +131,10 @@ namespace Lang {
 		}
 
 		Token* next(int offset = 1);
+
+		bool isSameTo(Token* t) {
+			return (kind == t->kind && type == t->type && value == t->value);
+		}
 
 		//¶þÔª²Ù×÷·û
 		bool isBinaryOperator() {

@@ -1,10 +1,24 @@
 i*2+!-3.as(1,-2,3-4,b[2-3*4]).aa
+if a {}
 3.0.0
 var a = var b=c=d
 var a:vector<list<int>>[4] = 3*(4-5)+1
 var b:(int[4],a) = (a)+(1+2,3)
-for var i = 0,j=0; i < 3; i+=1,i=2 {
+loop {
 	//print("i:"+i)
+}
+loop if a == b {
+	a = c
+}
+loop if a == b {
+	a = c
+} else if a == c{
+	a = d
+} else {
+	print("loop end")
+}
+loop each a in aa {
+	a = e
 }
 const b:fn(i:int)->(int) = fn(i:int)->(int){a=b}
 
