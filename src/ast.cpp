@@ -8,6 +8,10 @@ namespace Lang {
 		throw exception(e.c_str());
 	}
 
+	AST::Node* newBlock(int row = 0, int col = 0) {
+		return new AST::Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", row, col));
+	}
+
 	Token* AST::tk(int offset) {
 		int i = index + offset;
 		if (i >= 0 && i < (int)lex->tokens.size()) return lex->tokens[i];
@@ -16,10 +20,11 @@ namespace Lang {
 
 	void AST::parse() {
 		root = parseBlock();
+		//checkNode(root);
 	}
 
 	AST::Node* AST::parseBlock(string end/*="}"*/, string sep/*=";"*/) {
-		auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", tk()->row, tk()->col));
+		auto block = newBlock(tk()->row, tk()->col);
 		if (tk()->isOperator("{")) index += 1;
 
 		while (tk() != Token::Empty) {
@@ -117,7 +122,7 @@ namespace Lang {
 	}
 
 	AST::Node* AST::parseFuncCall() {
-		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCallParams, "_PARAMS_", tk()->row, tk()->col));
+		auto node = new Node(new Token(Token::Kind::kOperator, Token::Type::tFnCallArgs, "_ARGS_", tk()->row, tk()->col));
 		index += 1; // eat (
 		while (!tk()->isOperator(")")) {
 			node->addChild(parseExpression());
@@ -319,25 +324,28 @@ namespace Lang {
 		auto node = new Node(tk());
 		index += 1;
 
-		node->addChild(parseExpression());
+		auto block = newBlock();
+		node->addChild(block);
+
+		block->addChild(parseExpression());
 
 		if (!tk()->isOperator("{")) {
 			throwException(tk(), "expect `{`, got `" + tk()->value + "`");
 		}
 
-		node->addChild(parseBlock());
+		block->addChild(parseBlock());
 
 		if (tk()->isKeyword("else")) {
 			index += 1;
 			if (tk()->isKeyword("if")) {
-				node->addChild(parseIfExpr());
+				block->addChild(parseIfExpr());
 			} else if (tk()->isOperator("{")) {
-				node->addChild(parseBlock());
+				block->addChild(parseBlock());
 			} else {
 				throwException(tk(), "expect `{` or `if`, got `" + tk()->value + "`");
 			}
 		} else {
-			node->addChild(new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", 0, 0)));
+			block->addChild(newBlock());
 		}
 
 		return node;
@@ -404,17 +412,18 @@ namespace Lang {
 			node->addChild(parseBlock());
 		}
 		else if (tk()->isKeyword("if")) {
-			auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", 0, 0));
+			auto block = newBlock();
 			node->addChild(block);
+
 			auto ifExpr = parseIfExpr();
 			block->addChild(ifExpr);
 
-			auto elseNode = ifExpr->children[2];
-			while (elseNode->token->isKeyword("if")) elseNode = elseNode->children[2];
+			auto elseNode = ifExpr->children[0]->children[2];
+			while (elseNode->token->isKeyword("if")) elseNode = elseNode->children[0]->children[2];
 			elseNode->addChild(new Node(new Token(Token::Kind::kKeyword, Token::Type::tBreak, "break", 0, 0)));
 		}
 		else if (tk()->isKeyword("each")) {
-			auto block = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_BLOCK_", 0, 0));
+			auto block = newBlock();
 			node->addChild(block);
 
 			auto each = new Node(tk());
@@ -593,12 +602,15 @@ namespace Lang {
 	AST::Node* AST::parseDefineFunc(DefFuncMode mode) {
 		auto node = new Node(tk());
 		index += 1;
+
+		auto block = newBlock();
+		node->addChild(block);
 		
 		//name
 		if ((mode == dfmNormal || mode == dfmInterface) && tk()->isIdentifier()) {
-			node->addChild(parseDefineName());
+			block->addChild(parseDefineName());
 		} else {
-			node->addChild(new Node(Token::Empty));
+			block->addChild(new Node(Token::Empty));
 		}
 
 		if (!tk()->isOperator("(")) {
@@ -606,26 +618,26 @@ namespace Lang {
 		}
 		index += 1;
 
-		auto params = new Node(new Token(Token::Kind::kBlock, Token::Type::tUnknown, "_PARAMS_", tk()->row, tk()->col));
-		node->addChild(params);
+		auto args = new Node(new Token(Token::Kind::kOperator, Token::Type::tFnDefArgs, "_ARGS_", tk()->row, tk()->col));
+		block->addChild(args);
 		while (!tk()->isOperator(")")) {
 			if (tk()->isOperator(",")) { index += 1; continue; }
-			params->addChild(parseField());
+			args->addChild(parseField());
 		}
 
 		index += 1; // eat )
 
 		if (tk()->isOperator("->")) {
 			index += 1;
-			node->addChild(parseType());
+			block->addChild(parseType());
 		} else {
-			node->addChild(new Node(Token::Empty));
+			block->addChild(new Node(Token::Empty));
 		}
 
 		if ((mode == dfmNormal || mode == dfmInterface || mode == dfmValue) && tk()->isOperator("{")) {
-			node->addChild(parseBlock());
+			block->addChild(parseBlock());
 		} else {
-			if (mode == dfmInterface || mode == dfmType) node->addChild(new Node(Token::Empty));
+			if (mode == dfmInterface || mode == dfmType) block->addChild(new Node(Token::Empty));
 			else throwException(tk(), "expect `{`, got `" + tk()->value + "`");
 		}
 
@@ -728,5 +740,26 @@ namespace Lang {
 		index += 1; // eat }
 
 		return node;
+	}
+
+
+
+
+	void AST::checkNode(Node* node) {
+		if (node->token->kind == Token::Kind::kBlock) {
+			node->parentBlock = currBlock;
+			currBlock = node;
+
+			for (auto n : node->children) {
+				checkNode(n);
+			}
+
+			currBlock = node->parentBlock;
+		}
+		else {
+			for (auto n : node->children) {
+				checkNode(n);
+			}
+		}
 	}
 }

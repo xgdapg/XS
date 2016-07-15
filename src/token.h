@@ -103,7 +103,9 @@ namespace Lang {
 			tRBrace, // }
 
 			tFnCall, //
-			tFnCallParams, //
+			tFnCallArgs, //
+			tFnDefArgs, //
+
 			tSubscript, //
 			tTuple, //
 

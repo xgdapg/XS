@@ -16,13 +16,19 @@ namespace Lang {
 			vector<Node*> children;
 			Node* parent = nullptr;
 
+			Node* parentBlock = nullptr;
+			vector<string> names;
+
+
 			Node() {
 				children = vector<Node*>();
+				names = vector<string>();
 			}
 
 			Node(Token* t) {
 				token = t;
 				children = vector<Node*>();
+				names = vector<string>();
 			}
 
 			void addChild(Node* node) {
@@ -51,6 +57,8 @@ namespace Lang {
 			dfmValue,
 		};
 
+		Node* currBlock = nullptr;
+
 		Node* parseBlock(string end = "}", string sep = ";");
 		Node* parsePrimaryExpr();
 		Node* parseFuncCall();
@@ -74,6 +82,9 @@ namespace Lang {
 		Node* parseDefineInterface();
 
 		Node* buildTree(vector<Node*> list, int begin, int end);
+
+
+		void checkNode(Node* node);
 	};
 	
 
