@@ -8,7 +8,7 @@
 #include <vector>
 #include "util.h"
 
-//string createASTHtml(Lang::AST::Node* node);
+string createASTHtml(Lang::AST::Node* node);
 //string printNode(Lang::AST::Node* node);
 
 int main()
@@ -31,17 +31,15 @@ int main()
 			auto ast = new Lang::AST(lexer);
 			auto root = ast->parse();
 
-			root->print();
-			auto html = ast->printBuf.str();
 			if (runTest) {
-				if (sameToFile(f + ".html", html)) {
+				if (sameToFile(f + ".html", createASTHtml(root))) {
 					cout << "OK" << endl;
 				} else {
 					cout << "FAILED" << endl;
 				}
 			}
 			else {
-				saveToFile(f + ".html", html);
+				saveToFile(f + ".html", createASTHtml(root));
 				cout << "OK" << endl;
 			}
 		}
@@ -72,18 +70,19 @@ int main()
 //	fs.close();
 //}
 
-//string createASTHtml(Lang::AST::Node* node) {
-//	stringstream ss;
-//	ss << "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><style type=\"text/css\">";
-//	ss << "td{ vertical-align: top; }";
-//	ss << "span{ display: block; text-align:center; }";
-//	ss << "div{ border-style: solid; border-width: 1px; text-align:center; padding:2px; }";
-//	ss << "</style></head><body><table><tr><td>";
-//	ss << printNode(node);
-//	ss << "</td></tr></table></body></html>";
-//	return ss.str();
-//}
-//
+string createASTHtml(Lang::AST::Node* node) {
+	node->print();
+	stringstream ss;
+	ss << "<!DOCTYPE html><html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><style type=\"text/css\">";
+	ss << "td{ vertical-align: top; }";
+	ss << "span{ display: block; text-align:center; }";
+	ss << "div{ border-style: solid; border-width: 1px; text-align:center; padding:2px; }";
+	ss << "</style></head><body><table><tr><td>";
+	ss << node->ast->printBuf.str();
+	ss << "</td></tr></table></body></html>";
+	return ss.str();
+}
+
 //string printNode(Lang::AST::Node* node) {
 //	string s = "<div>";
 //	s += "<span>" + node->token->value + "</span>";

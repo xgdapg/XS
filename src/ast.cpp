@@ -1,8 +1,8 @@
 #include "ast.h"
 
-#define NODE_P(T)    ((T*)ast->createNode<T>()->parse())
-#define NODE_C(T)    ((T*)ast->createNode<T>())
-#define NODE_AP(T,A) ((T*)ast->createNode<T>(A)->parse())
+#define NODE_P(T)    ((T*)ast->createNode<T>()->setTypeName(#T)->parse())
+#define NODE_C(T)    ((T*)ast->createNode<T>()->setTypeName(#T))
+#define NODE_AP(T,A) ((T*)ast->createNode<T>(A)->setTypeName(#T)->parse())
 
 namespace Lang {
 	void throwException(Token* t, string e) {

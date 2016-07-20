@@ -43,30 +43,39 @@ namespace Lang {
 
 		class Node {
 		public:
-			AST*   ast   = nullptr;
-			Token* token = nullptr;
+			AST*   ast      = nullptr;
+			Token* token    = nullptr;
+			string typeName = "";
 
 			virtual ~Node() {};
 
+			Node* setTypeName(string name) { 
+				typeName = name;
+				return this;
+			}
+
 			virtual Node* parse() = 0;
 			virtual Node* eval() { return nullptr; };
-			virtual void  print() {};
+			virtual void  print();
 		};
 
 		
 		class LiteralNode : public Node {
 		public:
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class IdentifierNode : public Node {
 		public:
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class OperatorNode : public Node {
 		public:
 			Node* parse() override;
+			void  print() override;
 
 			virtual bool empty() {
 				return false;
@@ -84,6 +93,7 @@ namespace Lang {
 			}
 
 			Node* parse() override { return nullptr; };
+			void  print() override;
 
 			bool empty() override {
 				return left == nullptr && right == nullptr;
@@ -99,6 +109,7 @@ namespace Lang {
 			}
 
 			Node* parse() override { return nullptr; };
+			void  print() override;
 
 			bool empty() override {
 				return node == nullptr;
@@ -118,14 +129,25 @@ namespace Lang {
 			void  print() override;
 		};
 
-		class TypeNode : public Node {
+		class TypeNode;
+		class TypeNameNode : public Node {
 		public:
-			bool  isRef       = false;
-			Node* name        = nullptr;
-			bool  isArray     = false;
-			int   arrayLength = 0;
+			IdentifierNode*   name         = nullptr;
+			vector<TypeNode*> genericTypes = vector<TypeNode*>();
 
 			Node* parse() override;
+			void  print() override;
+		};
+
+		class TypeNode : public Node {
+		public:
+			bool          isRef       = false;
+			TypeNameNode* name        = nullptr;
+			bool          isArray     = false;
+			int           arrayLength = 0;
+
+			Node* parse() override;
+			void  print() override;
 		};
 
 		class ExpressionNode : public Node {
@@ -141,10 +163,18 @@ namespace Lang {
 			static Node* buildTree(vector<Node*> list, int begin, int end);
 		};
 
+		class FuncCallArgsNode : public Node {
+		public:
+			vector<ExpressionNode*> nodes = vector<ExpressionNode*>();
+
+			Node* parse() override;
+			void  print() override;
+		};
+
 		class FuncCallNode : public BinaryOperatorNode {
 		public:
-			Node* func = nullptr;
-			Node* args = nullptr;
+			Node*             func = nullptr;
+			FuncCallArgsNode* args = nullptr;
 
 			FuncCallNode() {
 				token = new Token(Token::Kind::kOperator, Token::Type::tFnCall, "_FNCALL_", 0, 0);
@@ -154,19 +184,14 @@ namespace Lang {
 				left = _left;
 				right = _right;
 				func = _left;
-				args = _right;
+				args = dynamic_cast<FuncCallArgsNode*>(_right);
 			}
 
 			bool empty() override {
 				return func == nullptr && args == nullptr;
 			}
-		};
 
-		class FuncCallArgsNode : public Node {
-		public:
-			vector<ExpressionNode*> nodes = vector<ExpressionNode*>();
-
-			Node* parse() override;
+			void print() override;
 		};
 
 		class SubscriptNode : public BinaryOperatorNode {
@@ -188,6 +213,8 @@ namespace Lang {
 			bool empty() override {
 				return node == nullptr && index == nullptr;
 			}
+
+			void print() override;
 		};
 
 		class SubscriptIndexNode : public Node {
@@ -210,6 +237,7 @@ namespace Lang {
 			vector<ExpressionNode*> values = vector<ExpressionNode*>();
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class TupleTypeNode : public Node {
@@ -217,6 +245,7 @@ namespace Lang {
 			vector<TypeNode*> types = vector<TypeNode*>();
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class DeclVarNode : public Node {
@@ -231,6 +260,7 @@ namespace Lang {
 			}
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class DeclConstNode : public Node {
@@ -245,6 +275,7 @@ namespace Lang {
 			}
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class AssignNode : public Node {
@@ -259,6 +290,7 @@ namespace Lang {
 			}
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class ReturnNode : public Node {
@@ -266,14 +298,7 @@ namespace Lang {
 			ExpressionNode* value = nullptr;
 
 			Node* parse() override;
-		};
-
-		class TypeNameNode : public Node {
-		public:
-			IdentifierNode*   name         = nullptr;
-			vector<TypeNode*> genericTypes = vector<TypeNode*>();
-
-			Node* parse() override;
+			void  print() override;
 		};
 
 		class FieldNode : public Node {
@@ -284,6 +309,7 @@ namespace Lang {
 			ExpressionNode* defaultValue = nullptr;
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class IfNode : public ScopeNode {
@@ -293,6 +319,7 @@ namespace Lang {
 			Node*           elseBlock = nullptr;
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class LoopNode : public ScopeNode {
@@ -300,6 +327,7 @@ namespace Lang {
 			Node* block = nullptr;
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class BreakNode : public Node {
@@ -308,6 +336,7 @@ namespace Lang {
 				token = new Token(Token::Kind::kKeyword, Token::Type::tBreak, "break", 0, 0);
 			}
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class EachNode : public ScopeNode {
@@ -317,6 +346,7 @@ namespace Lang {
 			BlockNode*      block = nullptr;
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class DefineNameNode : public Node {
@@ -325,6 +355,7 @@ namespace Lang {
 			vector<IdentifierNode*> genericNames = vector<IdentifierNode*>();
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class DefineFuncNode : public ScopeNode {
@@ -348,6 +379,7 @@ namespace Lang {
 			}
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class DefineStructNode : public Node {
@@ -356,6 +388,7 @@ namespace Lang {
 			vector<FieldNode*> fields = vector<FieldNode*>();
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class DefineImplNode : public Node {
@@ -365,6 +398,7 @@ namespace Lang {
 			vector<DefineFuncNode*> funcs = vector<DefineFuncNode*>();
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		class DefineInterfaceNode : public Node {
@@ -373,6 +407,7 @@ namespace Lang {
 			vector<DefineFuncNode*> funcs = vector<DefineFuncNode*>();
 
 			Node* parse() override;
+			void  print() override;
 		};
 
 		
